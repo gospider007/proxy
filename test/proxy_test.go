@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"gitee.com/baixudong/gospider/proxy"
 	"gitee.com/baixudong/gospider/requests"
+	"gitee.com/baixudong/proxy"
 )
 
 func TestProxy(t *testing.T) {
