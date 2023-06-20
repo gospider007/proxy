@@ -60,6 +60,57 @@ type erringRoundTripper interface {
 	RoundTripErr() error
 }
 
+func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
+	defer client.Close()
+	defer server.Close()
+	server.option.cnl2 = client.option.cnl
+	serverConn := http2.NewUpg(nil, http2.UpgOption{H2Ja3Spec: client.option.h2Ja3Spec}).UpgradeFn(server.option.host, server)
+	if erringRoundTripper, ok := serverConn.(erringRoundTripper); ok && erringRoundTripper.RoundTripErr() != nil {
+		return erringRoundTripper.RoundTripErr()
+	}
+	http2.NewUpg(nil, http2.UpgOption{Server: true}).ServerConn(preCtx, client, http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			r.URL.Scheme = "https"
+			r.URL.Host = net.JoinHostPort(tools.GetServerName(client.option.host), client.option.port)
+			if obj.requestCallBack != nil {
+				if err = obj.requestCallBack(r); err != nil {
+					server.Close()
+					client.Close()
+					return
+				}
+			}
+			resp, err := serverConn.RoundTrip(r)
+			if err != nil {
+				server.Close()
+				client.Close()
+				return
+			}
+			if resp.ContentLength <= 0 && resp.TransferEncoding == nil {
+				resp.TransferEncoding = []string{"chunked"}
+			}
+			if obj.responseCallBack != nil {
+				if err = obj.responseCallBack(r, resp); err != nil {
+					server.Close()
+					client.Close()
+					return
+				}
+			}
+			for kk, vvs := range resp.Header {
+				for _, vv := range vvs {
+					w.Header().Add(kk, vv)
+				}
+			}
+			w.WriteHeader(resp.StatusCode)
+			err = tools.CopyWitchContext(r.Context(), w, resp.Body)
+			if err != nil {
+				server.Close()
+				client.Close()
+				return
+			}
+		},
+	))
+	return
+}
 func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
 	defer client.Close()
 	defer server.Close()
@@ -84,10 +135,10 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 		if resp, err = serverConn.RoundTrip(req); err != nil {
 			return
 		}
-		resp.Proto = "HTTP/1.1"
-		if resp.ContentLength <= 0 {
+		if resp.ContentLength <= 0 && resp.TransferEncoding == nil {
 			resp.TransferEncoding = []string{"chunked"}
 		}
+		resp.Proto = "HTTP/1.1"
 		resp.ProtoMajor = 1
 		resp.ProtoMinor = 1
 		resp.Request = req.WithContext(server.option.ctx)
@@ -154,13 +205,19 @@ func (obj *Client) copyMain(ctx context.Context, client *ProxyConn, server *Prox
 func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
 	defer server.Close()
 	defer client.Close()
+
 	if client.option.http2 && !server.option.http2 { //http21 逻辑
-		return errors.New("没有http2 to http1.1 的逻辑")
+		return errors.New("没有21逻辑")
 	}
 	if !client.option.http2 && server.option.http2 { //http12 逻辑
 		return obj.http12Copy(ctx, client, server)
 	}
-	if client.option.http2 && server.option.http2 {
+	if client.option.http2 && server.option.http2 { //http22 逻辑
+		if obj.responseCallBack != nil ||
+			obj.requestCallBack != nil ||
+			client.option.h2Ja3 { //需要拦截请求 或需要设置h2指纹，就走12
+			return obj.http22Copy(ctx, client, server)
+		}
 		go func() {
 			defer client.Close()
 			defer server.Close()
@@ -231,6 +288,9 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 			if err != nil {
 				return nil, err
 			}
+			if negotiatedProtocol == "" {
+				negotiatedProtocol = "http/1.1"
+			}
 			var cert tls.Certificate
 			if len(peerCertificates) > 0 {
 				preCert := peerCertificates[0]
@@ -246,22 +306,10 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 			if err != nil {
 				return nil, err
 			}
-			if negotiatedProtocol == "h2" {
-				if obj.responseCallBack != nil ||
-					obj.requestCallBack != nil ||
-					obj.wsCallBack != nil ||
-					client.option.h2Ja3 { //需要拦截请求 或需要设置h2指纹，就走12
-					nextProtos = []string{"http/1.1"}
-				} else {
-					nextProtos = []string{"h2", "http/1.1"}
-				}
-			} else {
-				nextProtos = []string{"http/1.1"}
-			}
 			return &tls.Config{
 				InsecureSkipVerify: true,
 				Certificates:       []tls.Certificate{cert},
-				NextProtos:         nextProtos,
+				NextProtos:         []string{negotiatedProtocol},
 			}, nil
 		},
 	})
