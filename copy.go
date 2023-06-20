@@ -116,7 +116,8 @@ func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server 
 func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
 	defer client.Close()
 	defer server.Close()
-	serverConn := http2.NewUpg(nil, http2.UpgOption{H2Ja3Spec: client.option.h2Ja3Spec}).UpgradeFn(server.option.host, server.conn)
+	server.option.cnl2 = client.option.cnl
+	serverConn := http2.NewUpg(nil, http2.UpgOption{H2Ja3Spec: client.option.h2Ja3Spec}).UpgradeFn(server.option.host, server)
 	if erringRoundTripper, ok := serverConn.(erringRoundTripper); ok && erringRoundTripper.RoundTripErr() != nil {
 		return erringRoundTripper.RoundTripErr()
 	}
@@ -126,7 +127,7 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 		if client.req != nil {
 			req, client.req = client.req, nil
 		} else {
-			if req, err = client.readRequest(server.option.ctx, obj.requestCallBack); err != nil {
+			if req, err = client.readRequest(client.option.ctx, obj.requestCallBack); err != nil {
 				return
 			}
 		}
@@ -143,7 +144,7 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 		resp.Proto = "HTTP/1.1"
 		resp.ProtoMajor = 1
 		resp.ProtoMinor = 1
-		resp.Request = req.WithContext(server.option.ctx)
+		resp.Request = req.WithContext(client.option.ctx)
 		if obj.responseCallBack != nil {
 			if err = obj.responseCallBack(req, resp); err != nil {
 				return
@@ -157,13 +158,15 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 func (obj *Client) http11Copy(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
 	defer client.Close()
 	defer server.Close()
+	server.option.cnl2 = client.option.cnl
 	var req *http.Request
 	var rsp *http.Response
+
 	for !server.option.isWs {
 		if client.req != nil {
 			req, client.req = client.req, nil
 		} else {
-			if req, err = client.readRequest(server.option.ctx, obj.requestCallBack); err != nil {
+			if req, err = client.readRequest(client.option.ctx, obj.requestCallBack); err != nil {
 				return
 			}
 		}
@@ -174,7 +177,7 @@ func (obj *Client) http11Copy(ctx context.Context, client *ProxyConn, server *Pr
 		if rsp, err = server.readResponse(req); err != nil {
 			return
 		}
-		rsp.Request = req.WithContext(server.option.ctx)
+		rsp.Request = req.WithContext(client.option.ctx)
 		if obj.responseCallBack != nil {
 			if err = obj.responseCallBack(req, rsp); err != nil {
 				return
