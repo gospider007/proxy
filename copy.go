@@ -68,7 +68,9 @@ func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server 
 	if erringRoundTripper, ok := serverConn.(erringRoundTripper); ok && erringRoundTripper.RoundTripErr() != nil {
 		return erringRoundTripper.RoundTripErr()
 	}
-	http2.NewUpg(nil, http2.UpgOption{Server: true}).ServerConn(preCtx, client, http.HandlerFunc(
+	ctx, cnl := context.WithCancel(preCtx)
+	defer cnl()
+	http2.NewUpg(nil, http2.UpgOption{Server: true}).ServerConn(ctx, client, http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			r.URL.Scheme = "https"
 			r.URL.Host = net.JoinHostPort(tools.GetServerName(client.option.host), client.option.port)
