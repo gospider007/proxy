@@ -98,8 +98,10 @@ func TestProxy2(t *testing.T) {
 
 func TestProxyJa3(t *testing.T) {
 	proCli, err := proxy.NewClient(nil, proxy.ClientOption{
-		Ja3:       true,
-		DisVerify: true, //关闭白名单验证和密码验证，在没有白名单和密码的情况下如果不关闭，用不了
+		Ja3: true,
+		Usr: "admin",
+		Pwd: "password",
+		// DisVerify: true, //关闭白名单验证和密码验证，在没有白名单和密码的情况下如果不关闭，用不了
 
 	})
 	if err != nil {
