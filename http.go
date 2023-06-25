@@ -72,7 +72,7 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 			} else if obj.ja3 {
 				client.option.ja3 = true
 			}
-			
+
 			if obj.h2Ja3Spec.IsSet() {
 				client.option.h2Ja3 = true
 				client.option.h2Ja3Spec = obj.h2Ja3Spec
@@ -95,6 +95,7 @@ func (obj *Client) httpsHandle(ctx context.Context, client *ProxyConn) error {
 	tlsClient := tls.Server(client, &tls.Config{
 		InsecureSkipVerify: true,
 		Certificates:       []tls.Certificate{obj.cert},
+		NextProtos:         []string{"http/1.1"},
 	})
 	defer tlsClient.Close()
 	return obj.httpHandle(ctx, newProxyCon(ctx, tlsClient, bufio.NewReader(tlsClient), *client.option, true))
