@@ -210,7 +210,6 @@ func (obj *Client) copyMain(ctx context.Context, client *ProxyConn, server *Prox
 func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
 	defer server.Close()
 	defer client.Close()
-
 	if client.option.http2 && !server.option.http2 { //http21 逻辑
 		return errors.New("没有21逻辑")
 	}
@@ -272,11 +271,13 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 		} else {
 			nextProtos = []string{"h2", "http/1.1"}
 		}
-		tlsServer, _, _, err := obj.tlsServer(ctx, server, client.option.host, nextProtos, client.option.ja3, client.option.ja3Spec)
+		tlsServer, _, negotiatedProtocol, err := obj.tlsServer(ctx, server, client.option.host, nextProtos, client.option.ja3, client.option.ja3Spec)
 		if err != nil {
 			return err
 		}
-		return obj.copyHttpMain(ctx, client, newProxyCon(ctx, tlsServer, bufio.NewReader(tlsServer), *server.option, false))
+		server = newProxyCon(ctx, tlsServer, bufio.NewReader(tlsServer), *server.option, false)
+		server.option.http2 = negotiatedProtocol == "h2"
+		return obj.copyHttpMain(ctx, client, server)
 	}
 	var tlsClient *tls.Conn
 	var tlsServer net.Conn

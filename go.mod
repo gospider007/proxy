@@ -3,8 +3,8 @@ module gitee.com/baixudong/proxy
 go 1.20
 
 require (
-	gitee.com/baixudong/gospider v0.0.0-20230616125611-804fcbd755f6
-	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
+	gitee.com/baixudong/gospider v0.0.0-20230701160929-cc185ed19c8b
+	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
 )
 
 require (
