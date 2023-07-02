@@ -103,7 +103,7 @@ func (obj *ProxyConn) readResponse(req *http.Request) (*http.Response, error) {
 	}
 	return response, err
 }
-func (obj *ProxyConn) readRequest(ctx context.Context, requestCallBack func(*http.Request) error) (*http.Request, error) {
+func (obj *ProxyConn) readRequest(ctx context.Context, requestCallBack func(*http.Request, *http.Response) error) (*http.Request, error) {
 	var clientReq *http.Request
 	var err error
 	done := make(chan struct{})
@@ -120,7 +120,7 @@ func (obj *ProxyConn) readRequest(ctx context.Context, requestCallBack func(*htt
 		return clientReq, err
 	}
 	if requestCallBack != nil {
-		if err = requestCallBack(clientReq); err != nil {
+		if err = requestCallBack(clientReq, nil); err != nil {
 			return clientReq, err
 		}
 	}

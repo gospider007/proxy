@@ -45,12 +45,12 @@ type ClientOption struct {
 
 	Debug     bool //是否打印debug
 	DisVerify bool //关闭验证
-	//接收response 回调，返回error,则中断请求
-	ResponseCallBack func(*http.Request, *http.Response) error
+	//发送请求和接收response 回调，返回error,则中断请求
+	RequestCallBack func(*http.Request, *http.Response) error
 	//websocket 传输回调，返回error,则中断请求
 	WsCallBack func(websocket.MessageType, []byte, WsType) error
-	//发送request 回调，返回error,则中断请求
-	RequestCallBack func(*http.Request) error
+	//连接回调,返回error,则中断请求
+	HttpConnectCallBack func(*http.Request) error
 	//http,https 代理根据请求验证用户权限，返回error 则中断请求
 	VerifyAuthWithHttp func(*http.Request) error
 	//支持根据http,https代理的请求，动态生成ja3,h2指纹。注意这请求是客户端和代理协议协商的请求，不是客户端请求目标地址的请求
@@ -69,13 +69,13 @@ const (
 )
 
 type Client struct {
-	debug              bool
-	disVerify          bool
-	responseCallBack   func(*http.Request, *http.Response) error
-	wsCallBack         func(websocket.MessageType, []byte, WsType) error
-	requestCallBack    func(*http.Request) error
-	verifyAuthWithHttp func(*http.Request) error
-	createSpecWithHttp func(*http.Request) (ja3.ClientHelloSpec, ja3.H2Ja3Spec)
+	debug               bool
+	disVerify           bool
+	requestCallBack     func(*http.Request, *http.Response) error
+	wsCallBack          func(websocket.MessageType, []byte, WsType) error
+	httpConnectCallBack func(*http.Request) error
+	verifyAuthWithHttp  func(*http.Request) error
+	createSpecWithHttp  func(*http.Request) (ja3.ClientHelloSpec, ja3.H2Ja3Spec)
 
 	ja3     bool                //是否开启ja3
 	ja3Spec ja3.ClientHelloSpec //指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
@@ -104,17 +104,17 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	}
 	ctx, cnl := context.WithCancel(pre_ctx)
 	server := Client{
-		debug:              option.Debug,
-		disVerify:          option.DisVerify,
-		responseCallBack:   option.ResponseCallBack,
-		wsCallBack:         option.WsCallBack,
-		requestCallBack:    option.RequestCallBack,
-		verifyAuthWithHttp: option.VerifyAuthWithHttp,
-		createSpecWithHttp: option.CreateSpecWithHttp,
-		ja3:                option.Ja3,
-		ja3Spec:            option.Ja3Spec,
-		h2Ja3:              option.H2Ja3,
-		h2Ja3Spec:          option.H2Ja3Spec,
+		debug:               option.Debug,
+		disVerify:           option.DisVerify,
+		httpConnectCallBack: option.HttpConnectCallBack,
+		wsCallBack:          option.WsCallBack,
+		requestCallBack:     option.RequestCallBack,
+		verifyAuthWithHttp:  option.VerifyAuthWithHttp,
+		createSpecWithHttp:  option.CreateSpecWithHttp,
+		ja3:                 option.Ja3,
+		ja3Spec:             option.Ja3Spec,
+		h2Ja3:               option.H2Ja3,
+		h2Ja3Spec:           option.H2Ja3Spec,
 	}
 	server.ctx = ctx
 	server.cnl = cnl

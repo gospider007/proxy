@@ -14,7 +14,14 @@ import (
 func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 	defer client.Close()
 	var err error
-	clientReq, err := client.readRequest(ctx, obj.requestCallBack)
+	var clientReq *http.Request
+	if obj.httpConnectCallBack == nil {
+		clientReq, err = client.readRequest(ctx, nil)
+	} else {
+		clientReq, err = client.readRequest(ctx, func(r1 *http.Request, r2 *http.Response) error {
+			return obj.httpConnectCallBack(r1)
+		})
+	}
 	if err != nil {
 		return err
 	}

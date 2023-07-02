@@ -75,7 +75,7 @@ func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server 
 			r.URL.Scheme = "https"
 			r.URL.Host = net.JoinHostPort(tools.GetServerName(client.option.host), client.option.port)
 			if obj.requestCallBack != nil {
-				if err = obj.requestCallBack(r); err != nil {
+				if err = obj.requestCallBack(r, nil); err != nil {
 					server.Close()
 					client.Close()
 					return
@@ -90,8 +90,8 @@ func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server 
 			if resp.ContentLength <= 0 && resp.TransferEncoding == nil {
 				resp.TransferEncoding = []string{"chunked"}
 			}
-			if obj.responseCallBack != nil {
-				if err = obj.responseCallBack(r, resp); err != nil {
+			if obj.requestCallBack != nil {
+				if err = obj.requestCallBack(r, resp); err != nil {
 					server.Close()
 					client.Close()
 					return
@@ -145,8 +145,8 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 		resp.ProtoMajor = 1
 		resp.ProtoMinor = 1
 		resp.Request = req.WithContext(client.option.ctx)
-		if obj.responseCallBack != nil {
-			if err = obj.responseCallBack(req, resp); err != nil {
+		if obj.requestCallBack != nil {
+			if err = obj.requestCallBack(req, resp); err != nil {
 				return
 			}
 		}
@@ -178,8 +178,8 @@ func (obj *Client) http11Copy(ctx context.Context, client *ProxyConn, server *Pr
 			return
 		}
 		rsp.Request = req.WithContext(client.option.ctx)
-		if obj.responseCallBack != nil {
-			if err = obj.responseCallBack(req, rsp); err != nil {
+		if obj.requestCallBack != nil {
+			if err = obj.requestCallBack(req, rsp); err != nil {
 				return
 			}
 		}
@@ -195,7 +195,6 @@ func (obj *Client) copyMain(ctx context.Context, client *ProxyConn, server *Prox
 		return obj.copyHttpMain(ctx, client, server)
 	} else if client.option.schema == "https" {
 		if obj.requestCallBack != nil ||
-			obj.responseCallBack != nil ||
 			obj.wsCallBack != nil ||
 			client.option.ja3 ||
 			client.option.h2Ja3 ||
@@ -217,8 +216,7 @@ func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *
 		return obj.http12Copy(ctx, client, server)
 	}
 	if client.option.http2 && server.option.http2 { //http22 逻辑
-		if obj.responseCallBack != nil ||
-			obj.requestCallBack != nil ||
+		if obj.requestCallBack != nil ||
 			client.option.h2Ja3 { //需要拦截请求 或需要设置h2指纹，就走12
 			return obj.http22Copy(ctx, client, server)
 		}
@@ -229,7 +227,7 @@ func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *
 		}()
 		return tools.CopyWitchContext(ctx, server, client)
 	}
-	if obj.responseCallBack == nil && obj.wsCallBack == nil && obj.requestCallBack == nil { //没有回调直接返回
+	if obj.wsCallBack == nil && obj.requestCallBack == nil { //没有回调直接返回
 		if client.req != nil {
 			if err = client.req.Write(server); err != nil {
 				return err

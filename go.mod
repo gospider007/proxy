@@ -3,7 +3,7 @@ module gitee.com/baixudong/proxy
 go 1.20
 
 require (
-	gitee.com/baixudong/gospider v0.0.0-20230701160929-cc185ed19c8b
+	gitee.com/baixudong/gospider v0.0.0-20230702125634-29f0588790ae
 	golang.org/x/exp v0.0.0-20230626212559-97b1e661b5df
 )
 
@@ -11,7 +11,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.8.1 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
-	github.com/gaukas/godicttls v0.0.3 // indirect
+	github.com/gaukas/godicttls v0.0.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.16.6 // indirect
