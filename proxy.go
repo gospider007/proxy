@@ -133,7 +133,7 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	}
 	var err error
 	//dialer
-	if server.dialer, err = requests.NewDail(requests.DialOption{
+	if server.dialer, err = requests.NewDail(ctx, requests.DialOption{
 		TLSHandshakeTimeout: option.TLSHandshakeTimeout,
 		DnsCacheTime:        option.DnsCacheTime,
 		GetProxy:            option.GetProxy,

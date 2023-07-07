@@ -27,21 +27,22 @@ func TestProxy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("ip").String() == "" {
+
+	if jsonData, _ := resp.Json(); jsonData.Get("ip").String() == "" {
 		t.Fatal("代理bug")
 	}
 	resp, err = reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{Proxy: "https://" + proxyIp})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("ip").String() == "" {
+	if jsonData, _ := resp.Json(); jsonData.Get("ip").String() == "" {
 		t.Fatal("代理bug")
 	}
 	resp, err = reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{Proxy: "socks5://" + proxyIp})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("ip").String() == "" {
+	if jsonData, _ := resp.Json(); jsonData.Get("ip").String() == "" {
 		t.Fatal("代理bug")
 	}
 }
@@ -77,21 +78,21 @@ func TestProxy2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("ip").String() == "" {
+	if jsonData, _ := resp.Json(); jsonData.Get("ip").String() == "" {
 		t.Fatal("代理bug")
 	}
 	resp, err = reqCli.Request(nil, "get", "https://myip.top", requests.RequestOption{Proxy: "https://" + proxyIp})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("ip").String() == "" {
+	if jsonData, _ := resp.Json(); jsonData.Get("ip").String() == "" {
 		t.Fatal("代理bug")
 	}
 	resp, err = reqCli.Request(nil, "get", "https://myip.top", requests.RequestOption{Proxy: "socks5://" + proxyIp})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("ip").String() == "" {
+	if jsonData, _ := resp.Json(); jsonData.Get("ip").String() == "" {
 		t.Fatal("代理bug")
 	}
 }
@@ -121,7 +122,8 @@ func TestProxyJa3(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("digest").String() == "" || resp.Json().Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
+	jsonData, _ := resp.Json()
+	if jsonData.Get("digest").String() == "" || jsonData.Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
 		log.Print(resp.Text())
 		t.Fatal("代理bug")
 	}
@@ -131,7 +133,8 @@ func TestProxyJa3(t *testing.T) {
 		time.Sleep(time.Second * 2)
 		t.Fatal(err)
 	}
-	if resp.Json().Get("digest").String() == "" || resp.Json().Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
+	jsonData, _ = resp.Json()
+	if jsonData.Get("digest").String() == "" || jsonData.Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
 		log.Print(resp.Text())
 		t.Fatal("代理bug")
 	}
@@ -139,7 +142,8 @@ func TestProxyJa3(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("digest").String() == "" || resp.Json().Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
+	jsonData, _ = resp.Json()
+	if jsonData.Get("digest").String() == "" || jsonData.Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
 		log.Print(resp.Text())
 		t.Fatal("代理bug")
 	}
@@ -165,7 +169,8 @@ func TestProxyH2Ja3(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("digest").String() == "" || resp.Json().Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
+	jsonData, _ := resp.Json()
+	if jsonData.Get("digest").String() == "" || jsonData.Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
 		log.Print(resp.Text())
 		t.Fatal("代理bug")
 	}
@@ -174,7 +179,8 @@ func TestProxyH2Ja3(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("digest").String() == "" || resp.Json().Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
+	jsonData, _ = resp.Json()
+	if jsonData.Get("digest").String() == "" || jsonData.Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
 		log.Print(resp.Text())
 		t.Fatal("代理bug")
 	}
@@ -182,7 +188,8 @@ func TestProxyH2Ja3(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("digest").String() == "" || resp.Json().Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
+	jsonData, _ = resp.Json()
+	if jsonData.Get("digest").String() == "" || jsonData.Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
 		log.Print(resp.Text())
 		t.Fatal("代理bug")
 	}
@@ -211,7 +218,8 @@ func TestProxyAuth(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("digest").String() == "" || resp.Json().Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
+	jsonData, _ := resp.Json()
+	if jsonData.Get("digest").String() == "" || jsonData.Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
 		t.Fatal("代理bug")
 	}
 	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{Proxy: "https://admin:password@" + proxyIp})
@@ -219,14 +227,16 @@ func TestProxyAuth(t *testing.T) {
 		time.Sleep(time.Second * 2)
 		t.Fatal(err)
 	}
-	if resp.Json().Get("digest").String() == "" || resp.Json().Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
+	jsonData, _ = resp.Json()
+	if jsonData.Get("digest").String() == "" || jsonData.Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
 		t.Fatal("代理bug")
 	}
 	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{Proxy: "socks5://admin:password@" + proxyIp})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("digest").String() == "" || resp.Json().Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
+	jsonData, _ = resp.Json()
+	if jsonData.Get("digest").String() == "" || jsonData.Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
 		t.Fatal("代理bug")
 	}
 }
@@ -250,7 +260,8 @@ func TestProxyJa32(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("digest").String() == "" || resp.Json().Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
+	jsonData, _ := resp.Json()
+	if jsonData.Get("digest").String() == "" || jsonData.Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
 		t.Fatal("代理bug")
 	}
 
@@ -264,7 +275,8 @@ func TestProxyJa32(t *testing.T) {
 		time.Sleep(time.Second * 2)
 		t.Fatal(err)
 	}
-	if resp.Json().Get("digest").String() == "" || resp.Json().Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
+	jsonData, _ = resp.Json()
+	if jsonData.Get("digest").String() == "" || jsonData.Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
 		t.Fatal("代理bug")
 	}
 	reqCli, err = requests.NewClient(nil, requests.ClientOption{Proxy: "socks5://" + proxyIp})
@@ -275,7 +287,8 @@ func TestProxyJa32(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.Json().Get("digest").String() == "" || resp.Json().Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
+	jsonData, _ = resp.Json()
+	if jsonData.Get("digest").String() == "" || jsonData.Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
 		log.Print(resp.Text())
 		t.Fatal("代理bug")
 	}
