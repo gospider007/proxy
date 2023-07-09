@@ -8,7 +8,6 @@ import (
 	"errors"
 	"net"
 	"net/http"
-	_ "unsafe"
 
 	"gitee.com/baixudong/gospider/http2"
 	"gitee.com/baixudong/gospider/ja3"

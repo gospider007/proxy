@@ -6,14 +6,11 @@ import (
 	"net"
 	"net/http"
 	"time"
-	_ "unsafe"
 
 	"gitee.com/baixudong/gospider/ja3"
+	"gitee.com/baixudong/gospider/requests"
 	"gitee.com/baixudong/gospider/websocket"
 )
-
-//go:linkname readRequest net/http.readRequest
-func readRequest(b *bufio.Reader) (*http.Request, error)
 
 type ProxyOption struct {
 	ja3       bool                //是否启动ja3
@@ -109,7 +106,7 @@ func (obj *ProxyConn) readRequest(ctx context.Context, requestCallBack func(*htt
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		clientReq, err = readRequest(obj.reader)
+		clientReq, err = requests.ReadRequest(obj.reader)
 	}()
 	select {
 	case <-ctx.Done():

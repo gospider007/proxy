@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"gitee.com/baixudong/gospider/ja3"
 	"gitee.com/baixudong/gospider/kinds"
@@ -31,11 +32,11 @@ type ClientOption struct {
 	CrtFile      []byte              //公钥,根证书
 	KeyFile      []byte              //私钥
 
-	TLSHandshakeTimeout int64                                                   //tls 握手超时时间
-	DnsCacheTime        int64                                                   //dns 缓存时间
+	TLSHandshakeTimeout time.Duration                                           //tls 握手超时时间
+	DnsCacheTime        time.Duration                                           //dns 缓存时间
 	GetProxy            func(ctx context.Context, url *url.URL) (string, error) //代理ip http://116.62.55.139:8888
 	Proxy               string                                                  //代理ip http://192.168.1.50:8888
-	KeepAlive           int64                                                   //保活时间
+	KeepAlive           time.Duration                                           //保活时间
 	LocalAddr           string                                                  //本地网卡出口
 	ServerName          string                                                  //https 域名或ip
 	Vpn                 bool                                                    //是否是vpn
