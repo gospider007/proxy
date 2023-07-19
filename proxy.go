@@ -37,12 +37,12 @@ type ClientOption struct {
 	GetProxy            func(ctx context.Context, url *url.URL) (string, error) //代理ip http://116.62.55.139:8888
 	Proxy               string                                                  //代理ip http://192.168.1.50:8888
 	KeepAlive           time.Duration                                           //保活时间
-	LocalAddr           string                                                  //本地网卡出口
-	ServerName          string                                                  //https 域名或ip
-	Vpn                 bool                                                    //是否是vpn
-	Dns                 string                                                  //dns
-	AddrType            requests.AddrType                                       //host优先解析的类型
-	GetAddrType         func(string) requests.AddrType                          //控制host优先解析的类型
+	LocalAddr           *net.TCPAddr                                            //本地网卡出口
+	Dns                 net.IP
+	ServerName          string                         //https 域名或ip
+	Vpn                 bool                           //是否是vpn
+	AddrType            requests.AddrType              //host优先解析的类型
+	GetAddrType         func(string) requests.AddrType //控制host优先解析的类型
 
 	Debug     bool //是否打印debug
 	DisVerify bool //关闭验证
@@ -145,10 +145,9 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		ProxyJa3Spec:        option.ProxyJa3Spec,
 		Ja3:                 option.Ja3,
 		Ja3Spec:             option.Ja3Spec,
-
-		Dns:         option.Dns,
-		GetAddrType: option.GetAddrType,
-		AddrType:    option.AddrType,
+		GetAddrType:         option.GetAddrType,
+		AddrType:            option.AddrType,
+		Dns:                 option.Dns,
 	}); err != nil {
 		return nil, err
 	}
@@ -221,9 +220,7 @@ func (obj *Client) verifyPwd(client net.Conn, clientReq *http.Request) error {
 	}
 	return nil
 }
-func (obj *Client) getHttpProxyConn(ctx context.Context, ipUrl *url.URL) (net.Conn, error) {
-	return obj.dialer.DialContext(ctx, "tcp", net.JoinHostPort(ipUrl.Hostname(), ipUrl.Port()))
-}
+
 func (obj *Client) mainHandle(ctx context.Context, client net.Conn) (err error) {
 	defer recover()
 	if obj.debug {

@@ -102,11 +102,12 @@ func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server 
 				}
 			}
 			w.WriteHeader(resp.StatusCode)
-			err = tools.CopyWitchContext(r.Context(), w, resp.Body)
-			if err != nil {
-				server.Close()
-				client.Close()
-				return
+			if resp.Body != nil {
+				if err = tools.CopyWitchContext(r.Context(), w, resp.Body); err != nil {
+					server.Close()
+					client.Close()
+					return
+				}
 			}
 		},
 	))
@@ -261,20 +262,28 @@ func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *
 	return obj.wsSend(ctx, wsClient, wsServer)
 }
 func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
-	var nextProtos []string
-	if client.option.method != http.MethodConnect { //直连转发
-		if client.option.isWs || server.option.isWs {
-			nextProtos = []string{"http/1.1"}
-		} else {
-			nextProtos = []string{"h2", "http/1.1"}
+	httpsBytes, err := client.reader.Peek(1)
+	if err != nil {
+		return err
+	}
+	if httpsBytes[0] != 22 { //客户端直连
+		if client.option.method != http.MethodConnect { //服务端tls
+			var nextProtos []string
+			if client.option.isWs || server.option.isWs {
+				nextProtos = []string{"http/1.1"}
+			} else {
+				nextProtos = []string{"h2", "http/1.1"}
+			}
+			tlsServer, _, negotiatedProtocol, err := obj.tlsServer(ctx, server, client.option.host, nextProtos, client.option.ja3, client.option.ja3Spec)
+			if err != nil {
+				return err
+			}
+			server = newProxyCon(ctx, tlsServer, bufio.NewReader(tlsServer), *server.option, false)
+			server.option.http2 = negotiatedProtocol == "h2"
+			return obj.copyHttpMain(ctx, client, server)
+		} else { //服务端直连
+			return obj.copyHttpMain(ctx, client, server)
 		}
-		tlsServer, _, negotiatedProtocol, err := obj.tlsServer(ctx, server, client.option.host, nextProtos, client.option.ja3, client.option.ja3Spec)
-		if err != nil {
-			return err
-		}
-		server = newProxyCon(ctx, tlsServer, bufio.NewReader(tlsServer), *server.option, false)
-		server.option.http2 = negotiatedProtocol == "h2"
-		return obj.copyHttpMain(ctx, client, server)
 	}
 	var tlsClient *tls.Conn
 	var tlsServer net.Conn

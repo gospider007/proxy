@@ -25,7 +25,6 @@ type ProxyOption struct {
 	method   string
 	port     string
 	isWs     bool
-	tls      bool
 	wsOption websocket.Option
 	ctx      context.Context
 	cnl      context.CancelFunc
