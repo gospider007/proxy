@@ -14,10 +14,10 @@ import (
 	"strconv"
 	"strings"
 
-	"gitee.com/baixudong/gospider/tools"
+	"gitee.com/baixudong/tools"
 )
 
-func (obj *Client) getUdpData(ctx context.Context, content []byte) (net.IP, int, []byte, error) {
+func (obj *Client) getUdpData(content []byte) (net.IP, int, []byte, error) {
 	var addr net.IP
 	var dataL int
 	switch content[3] {
@@ -47,45 +47,45 @@ func (obj *Client) getUdpData(ctx context.Context, content []byte) (net.IP, int,
 	return addr, int(binary.BigEndian.Uint16(content[dataL : dataL+2])), content[dataL+2:], nil
 }
 
-func (obj *Client) udpMain(ctx context.Context, listenr *net.UDPConn) error {
+func (obj *Client) udpMain(listenr *net.UDPConn) error {
 	data := make([]byte, 1500)
 	for {
-		n, clientAddr, err := listenr.ReadFromUDP(data)
+		n, clientAddr, err := listenr.ReadFromUDP(data) //读取udp 数据
 		if err != nil {
 			return err
 		}
-		remoteAddr, remotePort, remoteData, err := obj.getUdpData(ctx, data[:n])
+		remoteAddr, remotePort, remoteData, err := obj.getUdpData(data[:n]) //获取目的ip,目的port,目的数据
 		if err != nil {
 			return err
 		}
 		remoteConn, err := net.DialUDP("udp", nil, &net.UDPAddr{
 			IP:   remoteAddr,
 			Port: remotePort,
-		})
+		}) //与目的地建立连接
 		if err != nil {
 			return err
 		}
-		if _, err = remoteConn.Write(remoteData); err != nil {
+		if _, err = remoteConn.Write(remoteData); err != nil { //向目的地发送数据
 			return err
 		}
-		if n, _, err = remoteConn.ReadFromUDP(data); err != nil {
+		if n, _, err = remoteConn.ReadFromUDP(data); err != nil { //接收目的地的数据
 			return err
 		}
-
-		if _, err = listenr.WriteToUDP(append([]byte{0, 0, 0, 1, 0, 0, 0, 0, 0, 0}, data[:n]...), clientAddr); err != nil {
+		if _, err = listenr.WriteToUDP(append([]byte{0, 0, 0, 1, 0, 0, 0, 0, 0, 0}, data[:n]...), clientAddr); err != nil { //向客户端发送接收到的数据
 			return err
 		}
 	}
 }
 func (obj *Client) udpHandle(ctx context.Context, client *ProxyConn) error {
-	listenr, err := net.ListenUDP("udp", &net.UDPAddr{
+	listenr, err := net.ListenUDP("udp", &net.UDPAddr{ //监听udp 端口
 		IP: net.IPv4(0, 0, 0, 0),
 	})
 	if err != nil {
 		return err
 	}
+	defer client.Close()
 	defer listenr.Close()
-	_, portStr, err := net.SplitHostPort(listenr.LocalAddr().String())
+	_, portStr, err := net.SplitHostPort(listenr.LocalAddr().String()) //获取本地监听的端口
 	if err != nil {
 		return err
 	}
@@ -93,22 +93,31 @@ func (obj *Client) udpHandle(ctx context.Context, client *ProxyConn) error {
 	if err != nil {
 		return err
 	}
-	writeData := append([]byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00}, byte(port>>8), byte(port))
-	if _, err = client.Write(writeData); err != nil {
-		return err
-	}
 	go func() {
 		defer client.Close()
 		defer listenr.Close()
-		err = obj.udpMain(ctx, listenr)
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			err = obj.udpMain(listenr)
+		}()
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+		case <-done:
+		}
 	}()
+	writeData := append([]byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00}, byte(port>>8), byte(port)) //通知客户端远程端口的数据
 	for {
+		if _, err = client.Write(writeData); err != nil {
+			return err
+		}
 		if _, _, err = obj.getSocketAddr(client); err != nil {
-			if !errors.Is(err, os.ErrDeadlineExceeded) {
-				return err
-			}
-		} else {
-			if _, err = client.Write(writeData); err != nil {
+			if errors.Is(err, os.ErrDeadlineExceeded) {
+				if err = client.SetDefaultDeadline(); err != nil {
+					return err
+				}
+			} else {
 				return err
 			}
 		}

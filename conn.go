@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"gitee.com/baixudong/gospider/ja3"
-	"gitee.com/baixudong/gospider/requests"
-	"gitee.com/baixudong/gospider/websocket"
+	"gitee.com/baixudong/ja3"
+	"gitee.com/baixudong/requests"
+	"gitee.com/baixudong/websocket"
 )
 
 type ProxyOption struct {
@@ -43,7 +43,9 @@ func newProxyCon(preCtx context.Context, conn net.Conn, reader *bufio.Reader, op
 	return &ProxyConn{conn: conn, reader: reader, option: &option, client: client}
 }
 func (obj *ProxyConn) Read(b []byte) (int, error) {
-	obj.SetDeadline(time.Now().Add(time.Second * 300))
+	if err := obj.SetDefaultDeadline(); err != nil {
+		return 0, err
+	}
 	n, err := obj.reader.Read(b)
 	if err != nil {
 		obj.Close()
@@ -51,7 +53,9 @@ func (obj *ProxyConn) Read(b []byte) (int, error) {
 	return n, err
 }
 func (obj *ProxyConn) Write(b []byte) (int, error) {
-	obj.SetDeadline(time.Now().Add(time.Second * 300))
+	if err := obj.SetDefaultDeadline(); err != nil {
+		return 0, err
+	}
 	n, err := obj.conn.Write(b)
 	if err != nil {
 		obj.Close()
@@ -81,6 +85,9 @@ func (obj *ProxyConn) RemoteAddr() net.Addr {
 }
 func (obj *ProxyConn) SetDeadline(t time.Time) error {
 	return obj.conn.SetDeadline(t)
+}
+func (obj *ProxyConn) SetDefaultDeadline() error {
+	return obj.SetDeadline(time.Now().Add(time.Second * 300))
 }
 func (obj *ProxyConn) SetReadDeadline(t time.Time) error {
 	return obj.conn.SetReadDeadline(t)

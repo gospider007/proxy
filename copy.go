@@ -9,10 +9,10 @@ import (
 	"net"
 	"net/http"
 
-	"gitee.com/baixudong/gospider/http2"
-	"gitee.com/baixudong/gospider/ja3"
-	"gitee.com/baixudong/gospider/tools"
-	"gitee.com/baixudong/gospider/websocket"
+	"gitee.com/baixudong/http2"
+	"gitee.com/baixudong/ja3"
+	"gitee.com/baixudong/tools"
+	"gitee.com/baixudong/websocket"
 	"golang.org/x/exp/slices"
 )
 
@@ -63,13 +63,13 @@ func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server 
 	defer client.Close()
 	defer server.Close()
 	server.option.cnl2 = client.option.cnl
-	serverConn := http2.NewUpg(nil, http2.UpgOption{H2Ja3Spec: client.option.h2Ja3Spec}).UpgradeFn(server.option.host, server)
+	serverConn := http2.NewUpg(nil, http2.UpgOption{H2Ja3Spec: client.option.h2Ja3Spec, TlsConfig: obj.dialer.TlsConfig()}).UpgradeFn(server.option.host, server)
 	if erringRoundTripper, ok := serverConn.(erringRoundTripper); ok && erringRoundTripper.RoundTripErr() != nil {
 		return erringRoundTripper.RoundTripErr()
 	}
 	ctx, cnl := context.WithCancel(preCtx)
 	defer cnl()
-	http2.NewUpg(nil, http2.UpgOption{Server: true}).ServerConn(ctx, client, http.HandlerFunc(
+	http2.NewUpg(nil, http2.UpgOption{Server: true, TlsConfig: obj.dialer.TlsConfig()}).ServerConn(ctx, client, http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			r.URL.Scheme = "https"
 			r.URL.Host = net.JoinHostPort(tools.GetServerName(client.option.host), client.option.port)
@@ -117,7 +117,7 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 	defer client.Close()
 	defer server.Close()
 	server.option.cnl2 = client.option.cnl
-	serverConn := http2.NewUpg(nil, http2.UpgOption{H2Ja3Spec: client.option.h2Ja3Spec}).UpgradeFn(server.option.host, server)
+	serverConn := http2.NewUpg(nil, http2.UpgOption{H2Ja3Spec: client.option.h2Ja3Spec, TlsConfig: obj.dialer.TlsConfig()}).UpgradeFn(server.option.host, server)
 	if erringRoundTripper, ok := serverConn.(erringRoundTripper); ok && erringRoundTripper.RoundTripErr() != nil {
 		return erringRoundTripper.RoundTripErr()
 	}
@@ -289,42 +289,40 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 	var tlsServer net.Conn
 	var peerCertificates []*x509.Certificate
 	var negotiatedProtocol string
-	tlsClient = tls.Server(client, &tls.Config{
-		InsecureSkipVerify: true,
-		GetConfigForClient: func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
-			serverName := chi.ServerName
-			if serverName == "" {
-				serverName = tools.GetServerName(client.option.host)
-			}
-			tlsServer, peerCertificates, negotiatedProtocol, err = obj.tlsServer(ctx, server, serverName, chi.SupportedProtos, client.option.ja3, client.option.ja3Spec)
-			if err != nil {
-				return nil, err
-			}
-			if negotiatedProtocol == "" {
-				negotiatedProtocol = "http/1.1"
-			}
-			var cert tls.Certificate
-			if len(peerCertificates) > 0 {
-				preCert := peerCertificates[0]
-				if chi.ServerName == "" && preCert.IPAddresses == nil && serverName != "" {
-					if ip, ipType := tools.ParseHost(serverName); ipType != 0 {
-						preCert.IPAddresses = []net.IP{ip}
-					}
+	tlsConfig := obj.dialer.TlsConfig()
+	tlsConfig.GetConfigForClient = func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
+		serverName := chi.ServerName
+		if serverName == "" {
+			serverName = tools.GetServerName(client.option.host)
+		}
+		tlsServer, peerCertificates, negotiatedProtocol, err = obj.tlsServer(ctx, server, serverName, chi.SupportedProtos, client.option.ja3, client.option.ja3Spec)
+		if err != nil {
+			return nil, err
+		}
+		if negotiatedProtocol == "" {
+			negotiatedProtocol = "http/1.1"
+		}
+		var cert tls.Certificate
+		if len(peerCertificates) > 0 {
+			preCert := peerCertificates[0]
+			if chi.ServerName == "" && preCert.IPAddresses == nil && serverName != "" {
+				if ip, ipType := tools.ParseHost(serverName); ipType != 0 {
+					preCert.IPAddresses = []net.IP{ip}
 				}
-				cert, err = tools.CreateProxyCertWithCert(nil, nil, preCert)
-			} else {
-				cert, err = tools.CreateProxyCertWithName(serverName)
 			}
-			if err != nil {
-				return nil, err
-			}
-			return &tls.Config{
-				InsecureSkipVerify: true,
-				Certificates:       []tls.Certificate{cert},
-				NextProtos:         []string{negotiatedProtocol},
-			}, nil
-		},
-	})
+			cert, err = tools.CreateProxyCertWithCert(nil, nil, preCert)
+		} else {
+			cert, err = tools.CreateProxyCertWithName(serverName)
+		}
+		if err != nil {
+			return nil, err
+		}
+		tlsConfig2 := obj.dialer.TlsConfig()
+		tlsConfig2.Certificates = []tls.Certificate{cert}
+		tlsConfig2.NextProtos = []string{negotiatedProtocol}
+		return tlsConfig2, nil
+	}
+	tlsClient = tls.Server(client, tlsConfig)
 	if err = tlsClient.HandshakeContext(ctx); err != nil {
 		return err
 	}
@@ -338,13 +336,19 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 }
 func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, nextProtos []string, isJa3 bool, ja3Spec ja3.ClientHelloSpec) (net.Conn, []*x509.Certificate, string, error) {
 	if isJa3 {
-		tlsConn, err := ja3.NewClient(ctx, conn, ja3Spec, !slices.Contains(nextProtos, "h2"), addr)
+		utlsConfig := obj.dialer.UtlsConfig()
+		utlsConfig.NextProtos = nextProtos
+		utlsConfig.ServerName = tools.GetServerName(addr)
+		tlsConn, err := ja3.NewClient(ctx, conn, ja3Spec, !slices.Contains(nextProtos, "h2"), utlsConfig)
 		if err != nil {
 			return tlsConn, nil, "", err
 		}
 		return tlsConn, tlsConn.ConnectionState().PeerCertificates, tlsConn.ConnectionState().NegotiatedProtocol, nil
 	} else {
-		tlsConn := tls.Client(conn, &tls.Config{InsecureSkipVerify: true, ServerName: tools.GetServerName(addr), NextProtos: nextProtos})
+		tlsConfig := obj.dialer.TlsConfig()
+		tlsConfig.NextProtos = nextProtos
+		tlsConfig.ServerName = tools.GetServerName(addr)
+		tlsConn := tls.Client(conn, tlsConfig)
 		if err := tlsConn.HandshakeContext(ctx); err != nil {
 			return tlsConn, nil, "", err
 		}

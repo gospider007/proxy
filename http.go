@@ -99,11 +99,10 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 }
 func (obj *Client) httpsHandle(ctx context.Context, client *ProxyConn) error {
 	defer client.Close()
-	tlsClient := tls.Server(client, &tls.Config{
-		InsecureSkipVerify: true,
-		Certificates:       []tls.Certificate{obj.cert},
-		NextProtos:         []string{"http/1.1"},
-	})
+	tlsConfig := obj.dialer.TlsConfig()
+	tlsConfig.Certificates = []tls.Certificate{obj.cert}
+	tlsConfig.NextProtos = []string{"http/1.1"}
+	tlsClient := tls.Server(client, tlsConfig)
 	defer tlsClient.Close()
 	return obj.httpHandle(ctx, newProxyCon(ctx, tlsClient, bufio.NewReader(tlsClient), *client.option, true))
 }

@@ -14,11 +14,11 @@ import (
 	"strconv"
 	"time"
 
-	"gitee.com/baixudong/gospider/ja3"
-	"gitee.com/baixudong/gospider/kinds"
-	"gitee.com/baixudong/gospider/requests"
-	"gitee.com/baixudong/gospider/tools"
-	"gitee.com/baixudong/gospider/websocket"
+	"gitee.com/baixudong/ja3"
+	"gitee.com/baixudong/kinds"
+	"gitee.com/baixudong/requests"
+	"gitee.com/baixudong/tools"
+	"gitee.com/baixudong/websocket"
 )
 
 type ClientOption struct {
@@ -33,7 +33,7 @@ type ClientOption struct {
 	KeyFile      []byte              //私钥
 
 	TLSHandshakeTimeout time.Duration                                           //tls 握手超时时间
-	DnsCacheTime        time.Duration                                           //dns 缓存时间
+	DialTimeout         time.Duration                                           //tls 握手超时时间
 	GetProxy            func(ctx context.Context, url *url.URL) (string, error) //代理ip http://116.62.55.139:8888
 	Proxy               string                                                  //代理ip http://192.168.1.50:8888
 	KeepAlive           time.Duration                                           //保活时间
@@ -136,7 +136,7 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	//dialer
 	if server.dialer, err = requests.NewDail(ctx, requests.DialOption{
 		TLSHandshakeTimeout: option.TLSHandshakeTimeout,
-		DnsCacheTime:        option.DnsCacheTime,
+		DialTimeout:         option.DialTimeout,
 		GetProxy:            option.GetProxy,
 		Proxy:               option.Proxy,
 		KeepAlive:           option.KeepAlive,
