@@ -4,8 +4,9 @@ import (
 	"bufio"
 	"context"
 	"net"
-	"net/http"
 	"time"
+
+	"net/http"
 
 	"gitee.com/baixudong/ja3"
 	"gitee.com/baixudong/requests"

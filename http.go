@@ -7,8 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/http"
 	"strings"
+
+	"net/http"
 )
 
 func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {

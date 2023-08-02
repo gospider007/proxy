@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"net"
+
 	"net/http"
 
 	"gitee.com/baixudong/http2"
@@ -63,13 +64,13 @@ func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server 
 	defer client.Close()
 	defer server.Close()
 	server.option.cnl2 = client.option.cnl
-	serverConn := http2.NewUpg(nil, http2.UpgOption{H2Ja3Spec: client.option.h2Ja3Spec, TlsConfig: obj.dialer.TlsConfig()}).UpgradeFn(server.option.host, server)
-	if erringRoundTripper, ok := serverConn.(erringRoundTripper); ok && erringRoundTripper.RoundTripErr() != nil {
-		return erringRoundTripper.RoundTripErr()
+	serverConn, err := http2.NewUpg(http2.UpgOption{H2Ja3Spec: client.option.h2Ja3Spec, TlsConfig: obj.dialer.TlsConfig()}).ClientConn(server)
+	if err != nil {
+		return err
 	}
 	ctx, cnl := context.WithCancel(preCtx)
 	defer cnl()
-	http2.NewUpg(nil, http2.UpgOption{Server: true, TlsConfig: obj.dialer.TlsConfig()}).ServerConn(ctx, client, http.HandlerFunc(
+	http2.NewUpg(http2.UpgOption{Server: true, TlsConfig: obj.dialer.TlsConfig()}).ServerConn(ctx, client, http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			r.URL.Scheme = "https"
 			r.URL.Host = net.JoinHostPort(tools.GetServerName(client.option.host), client.option.port)
@@ -117,9 +118,9 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 	defer client.Close()
 	defer server.Close()
 	server.option.cnl2 = client.option.cnl
-	serverConn := http2.NewUpg(nil, http2.UpgOption{H2Ja3Spec: client.option.h2Ja3Spec, TlsConfig: obj.dialer.TlsConfig()}).UpgradeFn(server.option.host, server)
-	if erringRoundTripper, ok := serverConn.(erringRoundTripper); ok && erringRoundTripper.RoundTripErr() != nil {
-		return erringRoundTripper.RoundTripErr()
+	serverConn, err := http2.NewUpg(http2.UpgOption{H2Ja3Spec: client.option.h2Ja3Spec, TlsConfig: obj.dialer.TlsConfig()}).ClientConn(server)
+	if err != nil {
+		return err
 	}
 	var req *http.Request
 	var resp *http.Response

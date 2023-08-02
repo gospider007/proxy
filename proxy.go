@@ -9,10 +9,11 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"net/http"
 	"net/url"
 	"strconv"
 	"time"
+
+	"net/http"
 
 	"gitee.com/baixudong/ja3"
 	"gitee.com/baixudong/kinds"
