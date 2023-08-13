@@ -149,7 +149,7 @@ func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
 		}
 	}
 	//获取代理
-	proxyUrl, err := obj.dialer.GetProxy(ctx, nil)
+	proxyUrl, err := obj.GetProxy(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
 		client.option.method = http.MethodConnect
 	}
 	netword := "tcp"
-	proxyServer, err := obj.dialer.DialContextWithProxy(ctx, netword, client.option.schema, addr, host, proxyUrl)
+	proxyServer, err := obj.dialer.DialContextWithProxy(ctx, netword, client.option.schema, addr, host, proxyUrl, obj.TlsConfig())
 	if err != nil {
 		return err
 	}

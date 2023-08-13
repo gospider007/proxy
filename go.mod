@@ -9,6 +9,7 @@ require (
 	gitee.com/baixudong/requests v0.0.0-20230726070511-70d9c0cbc3e3
 	gitee.com/baixudong/tools v0.0.0-20230726070525-d80da902e36d
 	gitee.com/baixudong/websocket v0.0.0-20230726070532-ab0f08baf667
+	github.com/refraction-networking/utls v1.3.3
 	golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b
 )
 
@@ -34,7 +35,6 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.9 // indirect
-	github.com/refraction-networking/utls v1.3.3 // indirect
 	github.com/tidwall/gjson v1.15.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect

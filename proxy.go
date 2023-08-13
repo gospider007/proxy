@@ -20,18 +20,17 @@ import (
 	"gitee.com/baixudong/requests"
 	"gitee.com/baixudong/tools"
 	"gitee.com/baixudong/websocket"
+	utls "github.com/refraction-networking/utls"
 )
 
 type ClientOption struct {
-	ProxyJa3     bool                //连接代理时是否开启ja3
-	ProxyJa3Spec ja3.ClientHelloSpec //连接代理时指定ja3Spec,//指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
-	Usr          string              //用户名
-	Pwd          string              //密码
-	IpWhite      []net.IP            //白名单 192.168.1.1,192.168.1.2
-	Port         int                 //代理端口
-	Host         string              //代理host
-	CrtFile      []byte              //公钥,根证书
-	KeyFile      []byte              //私钥
+	Usr     string   //用户名
+	Pwd     string   //密码
+	IpWhite []net.IP //白名单 192.168.1.1,192.168.1.2
+	Port    int      //代理端口
+	Host    string   //代理host
+	CrtFile []byte   //公钥,根证书
+	KeyFile []byte   //私钥
 
 	TLSHandshakeTimeout time.Duration                                           //tls 握手超时时间
 	DialTimeout         time.Duration                                           //tls 握手超时时间
@@ -57,11 +56,14 @@ type ClientOption struct {
 	VerifyAuthWithHttp func(*http.Request) error
 	//支持根据http,https代理的请求，动态生成ja3,h2指纹。注意这请求是客户端和代理协议协商的请求，不是客户端请求目标地址的请求
 	//返回空结构体，则不会设置指纹
-	CreateSpecWithHttp func(*http.Request) (ja3.ClientHelloSpec, ja3.H2Ja3Spec)
-	Ja3                bool                //是否开启ja3
-	Ja3Spec            ja3.ClientHelloSpec //指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
-	H2Ja3              bool                //是否开启h2 指纹
-	H2Ja3Spec          ja3.H2Ja3Spec       //h2 指纹
+	CreateSpecWithHttp func(*http.Request) (ja3.Ja3Spec, ja3.H2Ja3Spec)
+	Ja3                bool          //是否开启ja3
+	Ja3Spec            ja3.Ja3Spec   //指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
+	H2Ja3              bool          //是否开启h2 指纹
+	H2Ja3Spec          ja3.H2Ja3Spec //h2 指纹
+
+	TlsConfig  *tls.Config
+	UtlsConfig *utls.Config
 }
 type WsType int
 
@@ -77,10 +79,10 @@ type Client struct {
 	wsCallBack          func(websocket.MessageType, []byte, WsType) error
 	httpConnectCallBack func(*http.Request) error
 	verifyAuthWithHttp  func(*http.Request) error
-	createSpecWithHttp  func(*http.Request) (ja3.ClientHelloSpec, ja3.H2Ja3Spec)
+	createSpecWithHttp  func(*http.Request) (ja3.Ja3Spec, ja3.H2Ja3Spec)
 
-	ja3     bool                //是否开启ja3
-	ja3Spec ja3.ClientHelloSpec //指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
+	ja3     bool        //是否开启ja3
+	ja3Spec ja3.Ja3Spec //指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
 
 	h2Ja3     bool          //是否开启h2 指纹
 	h2Ja3Spec ja3.H2Ja3Spec //h2 指纹
@@ -98,14 +100,37 @@ type Client struct {
 	cnl      context.CancelFunc
 	host     string
 	port     string
+
+	tlsConfig  *tls.Config
+	utlsConfig *utls.Config
+
+	getProxy func(ctx context.Context, url *url.URL) (string, error) //代理ip http://116.62.55.139:8888
+	proxy    *url.URL
 }
 
 func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	if pre_ctx == nil {
 		pre_ctx = context.TODO()
 	}
-	ctx, cnl := context.WithCancel(pre_ctx)
+	if option.TlsConfig == nil {
+		option.TlsConfig = &tls.Config{
+			InsecureSkipVerify: true,
+			SessionTicketKey:   [32]byte{},
+			ClientSessionCache: tls.NewLRUClientSessionCache(0),
+		}
+	}
+	if option.UtlsConfig == nil {
+		option.UtlsConfig = &utls.Config{
+			InsecureSkipVerify:     true,
+			InsecureSkipTimeVerify: true,
+			SessionTicketKey:       [32]byte{},
+			ClientSessionCache:     utls.NewLRUClientSessionCache(0),
+		}
+	}
 	server := Client{
+		tlsConfig:           option.TlsConfig,
+		utlsConfig:          option.UtlsConfig,
+		getProxy:            option.GetProxy,
 		debug:               option.Debug,
 		disVerify:           option.DisVerify,
 		httpConnectCallBack: option.HttpConnectCallBack,
@@ -118,8 +143,14 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		h2Ja3:               option.H2Ja3,
 		h2Ja3Spec:           option.H2Ja3Spec,
 	}
-	server.ctx = ctx
-	server.cnl = cnl
+
+	var err error
+	if option.Proxy != "" {
+		if server.proxy, err = tools.VerifyProxy(option.Proxy); err != nil {
+			return nil, err
+		}
+	}
+	server.ctx, server.cnl = context.WithCancel(pre_ctx)
 	if option.Vpn {
 		server.vpn = option.Vpn
 	}
@@ -133,25 +164,16 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	for _, ip_white := range option.IpWhite {
 		server.ipWhite.Add(ip_white.String())
 	}
-	var err error
 	//dialer
-	if server.dialer, err = requests.NewDail(ctx, requests.DialOption{
-		TLSHandshakeTimeout: option.TLSHandshakeTimeout,
-		DialTimeout:         option.DialTimeout,
-		GetProxy:            option.GetProxy,
-		Proxy:               option.Proxy,
-		KeepAlive:           option.KeepAlive,
-		LocalAddr:           option.LocalAddr,
-		ProxyJa3:            option.ProxyJa3,
-		ProxyJa3Spec:        option.ProxyJa3Spec,
-		Ja3:                 option.Ja3,
-		Ja3Spec:             option.Ja3Spec,
-		GetAddrType:         option.GetAddrType,
-		AddrType:            option.AddrType,
-		Dns:                 option.Dns,
-	}); err != nil {
-		return nil, err
-	}
+	server.dialer = requests.NewDail(server.ctx, requests.DialOption{
+		DialTimeout: option.DialTimeout,
+		KeepAlive:   option.KeepAlive,
+		LocalAddr:   option.LocalAddr,
+
+		GetAddrType: option.GetAddrType,
+		AddrType:    option.AddrType,
+		Dns:         option.Dns,
+	})
 	//证书
 	if option.CrtFile == nil || option.KeyFile == nil {
 		if server.cert, err = tools.CreateProxyCertWithName(option.ServerName); err != nil {
@@ -170,6 +192,17 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		return nil, err
 	}
 	return &server, nil
+}
+
+func (obj *Client) GetProxy(ctx context.Context, href *url.URL) (*url.URL, error) {
+	if obj.proxy != nil {
+		return obj.proxy, nil
+	}
+	proxy, err := obj.getProxy(ctx, href)
+	if err != nil {
+		return nil, err
+	}
+	return tools.VerifyProxy(proxy)
 }
 
 // 代理监听的端口

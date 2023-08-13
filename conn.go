@@ -14,10 +14,10 @@ import (
 )
 
 type ProxyOption struct {
-	ja3       bool                //是否启动ja3
-	ja3Spec   ja3.ClientHelloSpec //ja3指纹
-	h2Ja3     bool                //是否启动h2Ja3
-	h2Ja3Spec ja3.H2Ja3Spec       //h2Ja3指纹
+	ja3       bool          //是否启动ja3
+	ja3Spec   ja3.Ja3Spec   //ja3指纹
+	h2Ja3     bool          //是否启动h2Ja3
+	h2Ja3Spec ja3.H2Ja3Spec //h2Ja3指纹
 
 	init     bool
 	http2    bool

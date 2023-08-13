@@ -14,6 +14,7 @@ import (
 	"gitee.com/baixudong/ja3"
 	"gitee.com/baixudong/tools"
 	"gitee.com/baixudong/websocket"
+	utls "github.com/refraction-networking/utls"
 	"golang.org/x/exp/slices"
 )
 
@@ -60,17 +61,23 @@ type erringRoundTripper interface {
 	RoundTripErr() error
 }
 
+func (obj *Client) TlsConfig() *tls.Config {
+	return obj.tlsConfig.Clone()
+}
+func (obj *Client) UtlsConfig() *utls.Config {
+	return obj.utlsConfig.Clone()
+}
 func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
 	defer client.Close()
 	defer server.Close()
 	server.option.cnl2 = client.option.cnl
-	serverConn, err := http2.NewUpg(http2.UpgOption{H2Ja3Spec: client.option.h2Ja3Spec, TlsConfig: obj.dialer.TlsConfig()}).ClientConn(server)
+	serverConn, err := http2.NewClientConn(server, client.option.h2Ja3Spec)
 	if err != nil {
 		return err
 	}
 	ctx, cnl := context.WithCancel(preCtx)
 	defer cnl()
-	http2.NewUpg(http2.UpgOption{Server: true, TlsConfig: obj.dialer.TlsConfig()}).ServerConn(ctx, client, http.HandlerFunc(
+	http2.NewServerConn(ctx, client, http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			r.URL.Scheme = "https"
 			r.URL.Host = net.JoinHostPort(tools.GetServerName(client.option.host), client.option.port)
@@ -118,7 +125,7 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 	defer client.Close()
 	defer server.Close()
 	server.option.cnl2 = client.option.cnl
-	serverConn, err := http2.NewUpg(http2.UpgOption{H2Ja3Spec: client.option.h2Ja3Spec, TlsConfig: obj.dialer.TlsConfig()}).ClientConn(server)
+	serverConn, err := http2.NewClientConn(server, client.option.h2Ja3Spec)
 	if err != nil {
 		return err
 	}
@@ -290,7 +297,7 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 	var tlsServer net.Conn
 	var peerCertificates []*x509.Certificate
 	var negotiatedProtocol string
-	tlsConfig := obj.dialer.TlsConfig()
+	tlsConfig := obj.TlsConfig()
 	tlsConfig.GetConfigForClient = func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
 		serverName := chi.ServerName
 		if serverName == "" {
@@ -318,7 +325,7 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 		if err != nil {
 			return nil, err
 		}
-		tlsConfig2 := obj.dialer.TlsConfig()
+		tlsConfig2 := obj.TlsConfig()
 		tlsConfig2.Certificates = []tls.Certificate{cert}
 		tlsConfig2.NextProtos = []string{negotiatedProtocol}
 		return tlsConfig2, nil
@@ -335,9 +342,9 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 	serverProxy := newProxyCon(ctx, tlsServer, bufio.NewReader(tlsServer), *server.option, false)
 	return obj.copyHttpMain(ctx, clientProxy, serverProxy)
 }
-func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, nextProtos []string, isJa3 bool, ja3Spec ja3.ClientHelloSpec) (net.Conn, []*x509.Certificate, string, error) {
+func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, nextProtos []string, isJa3 bool, ja3Spec ja3.Ja3Spec) (net.Conn, []*x509.Certificate, string, error) {
 	if isJa3 {
-		utlsConfig := obj.dialer.UtlsConfig()
+		utlsConfig := obj.UtlsConfig()
 		utlsConfig.NextProtos = nextProtos
 		utlsConfig.ServerName = tools.GetServerName(addr)
 		tlsConn, err := ja3.NewClient(ctx, conn, ja3Spec, !slices.Contains(nextProtos, "h2"), utlsConfig)
@@ -346,7 +353,7 @@ func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, ne
 		}
 		return tlsConn, tlsConn.ConnectionState().PeerCertificates, tlsConn.ConnectionState().NegotiatedProtocol, nil
 	} else {
-		tlsConfig := obj.dialer.TlsConfig()
+		tlsConfig := obj.TlsConfig()
 		tlsConfig.NextProtos = nextProtos
 		tlsConfig.ServerName = tools.GetServerName(addr)
 		tlsConn := tls.Client(conn, tlsConfig)
