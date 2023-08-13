@@ -10,8 +10,8 @@ import (
 
 	"net/http"
 
-	"gitee.com/baixudong/http2"
 	"gitee.com/baixudong/ja3"
+	"gitee.com/baixudong/net/http2"
 	"gitee.com/baixudong/tools"
 	"gitee.com/baixudong/websocket"
 	utls "github.com/refraction-networking/utls"
@@ -77,48 +77,51 @@ func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server 
 	}
 	ctx, cnl := context.WithCancel(preCtx)
 	defer cnl()
-	http2.NewServerConn(ctx, client, http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			r.URL.Scheme = "https"
-			r.URL.Host = net.JoinHostPort(tools.GetServerName(client.option.host), client.option.port)
-			if obj.requestCallBack != nil {
-				if err = obj.requestCallBack(r, nil); err != nil {
+	new(http2.Server).ServeConn(client, &http2.ServeConnOpts{
+		Context: ctx,
+		Handler: http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				r.URL.Scheme = "https"
+				r.URL.Host = net.JoinHostPort(tools.GetServerName(client.option.host), client.option.port)
+				if obj.requestCallBack != nil {
+					if err = obj.requestCallBack(r, nil); err != nil {
+						server.Close()
+						client.Close()
+						return
+					}
+				}
+				resp, err := serverConn.RoundTrip(r)
+				if err != nil {
 					server.Close()
 					client.Close()
 					return
 				}
-			}
-			resp, err := serverConn.RoundTrip(r)
-			if err != nil {
-				server.Close()
-				client.Close()
-				return
-			}
-			if resp.ContentLength <= 0 && resp.TransferEncoding == nil {
-				resp.TransferEncoding = []string{"chunked"}
-			}
-			if obj.requestCallBack != nil {
-				if err = obj.requestCallBack(r, resp); err != nil {
-					server.Close()
-					client.Close()
-					return
+				if resp.ContentLength <= 0 && resp.TransferEncoding == nil {
+					resp.TransferEncoding = []string{"chunked"}
 				}
-			}
-			for kk, vvs := range resp.Header {
-				for _, vv := range vvs {
-					w.Header().Add(kk, vv)
+				if obj.requestCallBack != nil {
+					if err = obj.requestCallBack(r, resp); err != nil {
+						server.Close()
+						client.Close()
+						return
+					}
 				}
-			}
-			w.WriteHeader(resp.StatusCode)
-			if resp.Body != nil {
-				if err = tools.CopyWitchContext(r.Context(), w, resp.Body); err != nil {
-					server.Close()
-					client.Close()
-					return
+				for kk, vvs := range resp.Header {
+					for _, vv := range vvs {
+						w.Header().Add(kk, vv)
+					}
 				}
-			}
-		},
-	))
+				w.WriteHeader(resp.StatusCode)
+				if resp.Body != nil {
+					if err = tools.CopyWitchContext(r.Context(), w, resp.Body); err != nil {
+						server.Close()
+						client.Close()
+						return
+					}
+				}
+			},
+		),
+	})
 	return
 }
 func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
