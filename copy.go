@@ -70,13 +70,16 @@ func (obj *Client) UtlsConfig() *utls.Config {
 func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
 	defer client.Close()
 	defer server.Close()
+	ctx, cnl := context.WithCancel(preCtx)
+	defer cnl()
 	server.option.cnl2 = client.option.cnl
-	serverConn, err := http2.NewClientConn(server, client.option.h2Ja3Spec)
+	serverConn, err := http2.NewClientConn(func() {
+		client.Close()
+		cnl()
+	}, server, client.option.h2Ja3Spec)
 	if err != nil {
 		return err
 	}
-	ctx, cnl := context.WithCancel(preCtx)
-	defer cnl()
 	new(http2.Server).ServeConn(client, &http2.ServeConnOpts{
 		Context: ctx,
 		Handler: http.HandlerFunc(
@@ -128,7 +131,9 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 	defer client.Close()
 	defer server.Close()
 	server.option.cnl2 = client.option.cnl
-	serverConn, err := http2.NewClientConn(server, client.option.h2Ja3Spec)
+	serverConn, err := http2.NewClientConn(func() {
+		client.Close()
+	}, server, client.option.h2Ja3Spec)
 	if err != nil {
 		return err
 	}
