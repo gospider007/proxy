@@ -72,16 +72,21 @@ func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server 
 	defer server.Close()
 	ctx, cnl := context.WithCancel(preCtx)
 	defer cnl()
-	server.option.cnl2 = client.option.cnl
 	serverConn, err := http2.NewClientConn(func() {
-		client.Close()
 		cnl()
 	}, server, client.option.h2Ja3Spec)
 	if err != nil {
 		return err
 	}
-	new(http2.Server).ServeConn(client, &http2.ServeConnOpts{
-		Context: ctx,
+	(&http2.Server{CloseCallBack: func() bool {
+		select {
+		case <-ctx.Done():
+			return true
+		default:
+			return false
+		}
+	}}).ServeConn(client, &http2.ServeConnOpts{
+		Context: preCtx,
 		Handler: http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				r.URL.Scheme = "https"
@@ -130,7 +135,6 @@ func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server 
 func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
 	defer client.Close()
 	defer server.Close()
-	server.option.cnl2 = client.option.cnl
 	serverConn, err := http2.NewClientConn(func() {
 		client.Close()
 	}, server, client.option.h2Ja3Spec)
@@ -143,11 +147,10 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 		if client.req != nil {
 			req, client.req = client.req, nil
 		} else {
-			if req, err = client.readRequest(client.option.ctx, obj.requestCallBack); err != nil {
+			if req, err = client.readRequest(ctx, obj.requestCallBack); err != nil {
 				return
 			}
 		}
-		req = req.WithContext(client.option.ctx)
 		req.Proto = "HTTP/2.0"
 		req.ProtoMajor = 2
 		req.ProtoMinor = 0
@@ -160,7 +163,6 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 		resp.Proto = "HTTP/1.1"
 		resp.ProtoMajor = 1
 		resp.ProtoMinor = 1
-		resp.Request = req.WithContext(client.option.ctx)
 		if obj.requestCallBack != nil {
 			if err = obj.requestCallBack(req, resp); err != nil {
 				return
@@ -174,7 +176,6 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 func (obj *Client) http11Copy(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
 	defer client.Close()
 	defer server.Close()
-	server.option.cnl2 = client.option.cnl
 	var req *http.Request
 	var rsp *http.Response
 
@@ -182,18 +183,16 @@ func (obj *Client) http11Copy(ctx context.Context, client *ProxyConn, server *Pr
 		if client.req != nil {
 			req, client.req = client.req, nil
 		} else {
-			if req, err = client.readRequest(client.option.ctx, obj.requestCallBack); err != nil {
+			if req, err = client.readRequest(ctx, obj.requestCallBack); err != nil {
 				return
 			}
 		}
-		req = req.WithContext(client.option.ctx)
 		if err = req.Write(server); err != nil {
 			return
 		}
 		if rsp, err = server.readResponse(req); err != nil {
 			return
 		}
-		rsp.Request = req.WithContext(client.option.ctx)
 		if obj.requestCallBack != nil {
 			if err = obj.requestCallBack(req, rsp); err != nil {
 				return

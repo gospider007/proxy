@@ -198,11 +198,14 @@ func (obj *Client) GetProxy(ctx context.Context, href *url.URL) (*url.URL, error
 	if obj.proxy != nil {
 		return obj.proxy, nil
 	}
-	proxy, err := obj.getProxy(ctx, href)
-	if err != nil {
-		return nil, err
+	if obj.getProxy != nil {
+		proxy, err := obj.getProxy(ctx, href)
+		if err != nil {
+			return nil, err
+		}
+		return tools.VerifyProxy(proxy)
 	}
-	return tools.VerifyProxy(proxy)
+	return nil, nil
 }
 
 // 代理监听的端口

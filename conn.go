@@ -27,9 +27,6 @@ type ProxyOption struct {
 	port     string
 	isWs     bool
 	wsOption websocket.Option
-	ctx      context.Context
-	cnl      context.CancelFunc
-	cnl2     context.CancelFunc
 }
 type ProxyConn struct {
 	client bool
@@ -40,7 +37,6 @@ type ProxyConn struct {
 }
 
 func newProxyCon(preCtx context.Context, conn net.Conn, reader *bufio.Reader, option ProxyOption, client bool) *ProxyConn {
-	option.ctx, option.cnl = context.WithCancel(preCtx)
 	return &ProxyConn{conn: conn, reader: reader, option: &option, client: client}
 }
 func (obj *ProxyConn) Read(b []byte) (int, error) {
@@ -63,19 +59,7 @@ func (obj *ProxyConn) Write(b []byte) (int, error) {
 	}
 	return n, err
 }
-
-func (obj *ProxyConn) Cnl() {
-	obj.option.cnl()
-	if obj.option.cnl2 != nil {
-		obj.option.cnl2()
-	}
-}
-func (obj *ProxyConn) Ctx() context.Context {
-	return obj.option.ctx
-}
-
 func (obj *ProxyConn) Close() error {
-	obj.Cnl()
 	return obj.conn.Close()
 }
 func (obj *ProxyConn) LocalAddr() net.Addr {
