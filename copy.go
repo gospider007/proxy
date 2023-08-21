@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"log"
 	"net"
 
 	"net/http"
@@ -354,10 +355,25 @@ func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, ne
 		utlsConfig := obj.UtlsConfig()
 		utlsConfig.NextProtos = nextProtos
 		utlsConfig.ServerName = tools.GetServerName(addr)
+		_, ok := utlsConfig.ClientSessionCache.Get(addr)
+		if ok {
+			if !ja3Spec.HasPsk() {
+				ja3.AddPsk(&ja3Spec)
+			}
+		} else {
+			if ja3Spec.HasPsk() {
+				ja3.DelPsk(&ja3Spec)
+			}
+		}
 		tlsConn, err := ja3.NewClient(ctx, conn, ja3Spec, !slices.Contains(nextProtos, "h2"), utlsConfig)
 		if err != nil {
 			return tlsConn, nil, "", err
 		}
+
+		if tlsConn.ConnectionState().HandshakeComplete && tlsConn.ConnectionState().Version == tls.VersionTLS13 {
+			log.Print(tlsConn.HandshakeState.State13.UsingPSK)
+		}
+
 		return tlsConn, tlsConn.ConnectionState().PeerCertificates, tlsConn.ConnectionState().NegotiatedProtocol, nil
 	} else {
 		tlsConfig := obj.TlsConfig()
