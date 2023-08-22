@@ -73,6 +73,7 @@ const (
 )
 
 type Client struct {
+	clientSessionCache  utls.ClientSessionCache
 	debug               bool
 	disVerify           bool
 	requestCallBack     func(*http.Request, *http.Response) error
@@ -81,10 +82,8 @@ type Client struct {
 	verifyAuthWithHttp  func(*http.Request) error
 	createSpecWithHttp  func(*http.Request) (ja3.Ja3Spec, ja3.H2Ja3Spec)
 
-	ja3     bool        //是否开启ja3
 	ja3Spec ja3.Ja3Spec //指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
 
-	h2Ja3     bool          //是否开启h2 指纹
 	h2Ja3Spec ja3.H2Ja3Spec //h2 指纹
 
 	err      error //错误
@@ -127,7 +126,15 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 			ClientSessionCache:     utls.NewLRUClientSessionCache(0),
 		}
 	}
+	if !option.Ja3Spec.IsSet() && option.Ja3 {
+		option.Ja3Spec = ja3.DefaultJa3Spec()
+	}
+	if !option.H2Ja3Spec.IsSet() && option.H2Ja3 {
+		option.H2Ja3Spec = ja3.DefaultH2Ja3Spec()
+	}
+
 	server := Client{
+		clientSessionCache:  ja3.NewClientSessionCache(),
 		tlsConfig:           option.TlsConfig,
 		utlsConfig:          option.UtlsConfig,
 		getProxy:            option.GetProxy,
@@ -138,9 +145,7 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		requestCallBack:     option.RequestCallBack,
 		verifyAuthWithHttp:  option.VerifyAuthWithHttp,
 		createSpecWithHttp:  option.CreateSpecWithHttp,
-		ja3:                 option.Ja3,
 		ja3Spec:             option.Ja3Spec,
-		h2Ja3:               option.H2Ja3,
 		h2Ja3Spec:           option.H2Ja3Spec,
 	}
 

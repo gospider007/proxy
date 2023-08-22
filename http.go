@@ -55,38 +55,18 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 		if obj.createSpecWithHttp != nil {
 			ja3Spec, h2Ja3Spec := obj.createSpecWithHttp(clientReq)
 			if ja3Spec.IsSet() {
-				client.option.ja3 = true
 				client.option.ja3Spec = ja3Spec
-			} else if obj.ja3Spec.IsSet() {
-				client.option.ja3 = true
+			} else {
 				client.option.ja3Spec = obj.ja3Spec
-			} else if obj.ja3 {
-				client.option.ja3 = true
 			}
-
 			if h2Ja3Spec.IsSet() {
-				client.option.h2Ja3 = true
 				client.option.h2Ja3Spec = h2Ja3Spec
-			} else if obj.h2Ja3Spec.IsSet() {
-				client.option.h2Ja3 = true
+			} else {
 				client.option.h2Ja3Spec = obj.h2Ja3Spec
-			} else if obj.h2Ja3 {
-				client.option.h2Ja3 = true
 			}
 		} else {
-			if obj.ja3Spec.IsSet() {
-				client.option.ja3 = true
-				client.option.ja3Spec = obj.ja3Spec
-			} else if obj.ja3 {
-				client.option.ja3 = true
-			}
-
-			if obj.h2Ja3Spec.IsSet() {
-				client.option.h2Ja3 = true
-				client.option.h2Ja3Spec = obj.h2Ja3Spec
-			} else if obj.h2Ja3 {
-				client.option.h2Ja3 = true
-			}
+			client.option.ja3Spec = obj.ja3Spec
+			client.option.h2Ja3Spec = obj.h2Ja3Spec
 		}
 	}
 	if clientReq.Method == http.MethodConnect {
