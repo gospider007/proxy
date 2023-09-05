@@ -121,7 +121,7 @@ func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server 
 				}
 				w.WriteHeader(resp.StatusCode)
 				if resp.Body != nil {
-					if err = tools.CopyWitchContext(r.Context(), w, resp.Body); err != nil {
+					if err = tools.CopyWitchContext(r.Context(), w, resp.Body, false); err != nil {
 						server.Close()
 						client.Close()
 						return
@@ -238,9 +238,9 @@ func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *
 		go func() {
 			defer client.Close()
 			defer server.Close()
-			tools.CopyWitchContext(ctx, client, server)
+			tools.CopyWitchContext(ctx, client, server, true)
 		}()
-		return tools.CopyWitchContext(ctx, server, client)
+		return tools.CopyWitchContext(ctx, server, client, true)
 	}
 	if obj.wsCallBack == nil && obj.requestCallBack == nil { //没有回调直接返回
 		if client.req != nil {
@@ -252,9 +252,9 @@ func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *
 		go func() {
 			defer client.Close()
 			defer server.Close()
-			err = tools.CopyWitchContext(ctx, client, server)
+			err = tools.CopyWitchContext(ctx, client, server, true)
 		}()
-		err = tools.CopyWitchContext(ctx, server, client)
+		err = tools.CopyWitchContext(ctx, server, client, true)
 		return
 	}
 	if err = obj.http11Copy(ctx, client, server); err != nil { //http11 开始回调
@@ -264,9 +264,9 @@ func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *
 		go func() {
 			defer client.Close()
 			defer server.Close()
-			tools.CopyWitchContext(ctx, client, server)
+			tools.CopyWitchContext(ctx, client, server, true)
 		}()
-		return tools.CopyWitchContext(ctx, server, client)
+		return tools.CopyWitchContext(ctx, server, client, true)
 	}
 	//ws 开始回调
 	wsClient := websocket.NewConn(client, false, client.option.wsOption)

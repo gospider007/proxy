@@ -7,7 +7,7 @@ require (
 	gitee.com/baixudong/kinds v0.0.0-20230809033013-c3d6d3479f8c
 	gitee.com/baixudong/net v0.0.0-20230905022950-d3a73f7bf4cc
 	gitee.com/baixudong/requests v0.0.0-20230905023058-3d409e7fa008
-	gitee.com/baixudong/tools v0.0.0-20230821075140-7422c51fd918
+	gitee.com/baixudong/tools v0.0.0-20230905085451-d080a77e3eb5
 	gitee.com/baixudong/websocket v0.0.0-20230821075043-d36a43fd76a3
 	github.com/refraction-networking/utls v1.5.3
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
