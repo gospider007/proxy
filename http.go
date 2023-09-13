@@ -39,7 +39,7 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 			return err
 		}
 	}
-	proxyUrl, err := obj.GetProxy(ctx, nil)
+	proxyUrl, err := obj.GetProxy(ctx, clientReq.URL)
 	if err != nil {
 		return err
 	}

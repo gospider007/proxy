@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"net/http"
+	"net/url"
 
 	"gitee.com/baixudong/tools"
 )
@@ -148,8 +149,9 @@ func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
 			return errors.New("loop addr error")
 		}
 	}
+	pu, _ := url.Parse(addr)
 	//获取代理
-	proxyUrl, err := obj.GetProxy(ctx, nil)
+	proxyUrl, err := obj.GetProxy(ctx, pu)
 	if err != nil {
 		return err
 	}

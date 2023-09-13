@@ -3,14 +3,14 @@ module gitee.com/baixudong/proxy
 go 1.21.0
 
 require (
-	gitee.com/baixudong/ja3 v0.0.0-20230905022841-a30a5742bdb7
+	gitee.com/baixudong/ja3 v0.0.0-20230913080728-e3b7c48ce24d
 	gitee.com/baixudong/kinds v0.0.0-20230809033013-c3d6d3479f8c
 	gitee.com/baixudong/net v0.0.0-20230905022950-d3a73f7bf4cc
-	gitee.com/baixudong/requests v0.0.0-20230905023058-3d409e7fa008
+	gitee.com/baixudong/requests v0.0.0-20230913085841-24f5a7a650ea
 	gitee.com/baixudong/tools v0.0.0-20230905085451-d080a77e3eb5
 	gitee.com/baixudong/websocket v0.0.0-20230821075043-d36a43fd76a3
 	github.com/refraction-networking/utls v1.5.3
-	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 )
 
 require (
@@ -35,9 +35,9 @@ require (
 	github.com/tidwall/pretty v1.2.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.25.0 // indirect
-	golang.org/x/crypto v0.12.0 // indirect
+	golang.org/x/crypto v0.13.0 // indirect
 	golang.org/x/image v0.12.0 // indirect
-	golang.org/x/net v0.14.0 // indirect
+	golang.org/x/net v0.15.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
