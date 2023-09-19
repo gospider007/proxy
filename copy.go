@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"log"
 	"net"
 
 	"net/http"
@@ -178,8 +179,8 @@ func (obj *Client) http11Copy(ctx context.Context, client *ProxyConn, server *Pr
 	defer server.Close()
 	var req *http.Request
 	var rsp *http.Response
-
-	for !server.option.isWs {
+	log.Print(server.option.isWs)
+	for {
 		if client.req != nil {
 			req, client.req = client.req, nil
 		} else {
@@ -201,8 +202,10 @@ func (obj *Client) http11Copy(ctx context.Context, client *ProxyConn, server *Pr
 		if err = rsp.Write(client); err != nil {
 			return
 		}
+		if rsp.StatusCode == 101 {
+			return
+		}
 	}
-	return
 }
 
 func (obj *Client) copyMain(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
