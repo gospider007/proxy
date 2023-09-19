@@ -4,10 +4,8 @@ import (
 	"bufio"
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net"
-	"strings"
 
 	"net/http"
 )
@@ -25,11 +23,6 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 	}
 	if err != nil {
 		return err
-	}
-	if strings.HasPrefix(clientReq.Host, "127.0.0.1") || strings.HasPrefix(clientReq.Host, "localhost") {
-		if clientReq.URL.Port() == obj.port {
-			return errors.New("loop addr error")
-		}
 	}
 	if err = obj.verifyPwd(client, clientReq); err != nil {
 		return err

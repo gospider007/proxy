@@ -3,11 +3,11 @@ module gitee.com/baixudong/proxy
 go 1.21.0
 
 require (
-	gitee.com/baixudong/ja3 v0.0.0-20230913080728-e3b7c48ce24d
+	gitee.com/baixudong/ja3 v0.0.0-20230919022351-7da22e9672be
 	gitee.com/baixudong/kinds v0.0.0-20230809033013-c3d6d3479f8c
 	gitee.com/baixudong/net v0.0.0-20230905022950-d3a73f7bf4cc
-	gitee.com/baixudong/requests v0.0.0-20230913085841-24f5a7a650ea
-	gitee.com/baixudong/tools v0.0.0-20230905085451-d080a77e3eb5
+	gitee.com/baixudong/requests v0.0.0-20230919022448-e6a7bdbfa7ba
+	gitee.com/baixudong/tools v0.0.0-20230919022534-a35f70b56721
 	gitee.com/baixudong/websocket v0.0.0-20230821075043-d36a43fd76a3
 	github.com/refraction-networking/utls v1.5.3
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
@@ -26,7 +26,7 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.16.7 // indirect
+	github.com/klauspost/compress v1.17.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/quic-go/quic-go v0.38.1 // indirect
@@ -34,7 +34,7 @@ require (
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.25.0 // indirect
+	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/crypto v0.13.0 // indirect
 	golang.org/x/image v0.12.0 // indirect
 	golang.org/x/net v0.15.0 // indirect
