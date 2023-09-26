@@ -151,7 +151,7 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 
 	var err error
 	if option.Proxy != "" {
-		if server.proxy, err = tools.VerifyProxy(option.Proxy); err != nil {
+		if server.proxy, err = requests.VerifyProxy(option.Proxy); err != nil {
 			return nil, err
 		}
 	}
@@ -181,7 +181,7 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	})
 	//证书
 	if option.CrtFile == nil || option.KeyFile == nil {
-		if server.cert, err = tools.CreateProxyCertWithName(option.ServerName); err != nil {
+		if server.cert, err = requests.CreateProxyCertWithName(option.ServerName); err != nil {
 			return nil, err
 		}
 	} else {
@@ -208,7 +208,7 @@ func (obj *Client) GetProxy(ctx context.Context, href *url.URL) (*url.URL, error
 		if err != nil {
 			return nil, err
 		}
-		return tools.VerifyProxy(proxy)
+		return requests.VerifyProxy(proxy)
 	}
 	return nil, nil
 }

@@ -12,6 +12,7 @@ import (
 
 	"gitee.com/baixudong/ja3"
 	"gitee.com/baixudong/net/http2"
+	"gitee.com/baixudong/requests"
 	"gitee.com/baixudong/tools"
 	"gitee.com/baixudong/websocket"
 	utls "github.com/refraction-networking/utls"
@@ -90,7 +91,7 @@ func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server 
 		Handler: http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				r.URL.Scheme = "https"
-				r.URL.Host = net.JoinHostPort(tools.GetServerName(client.option.host), client.option.port)
+				r.URL.Host = net.JoinHostPort(requests.GetServerName(client.option.host), client.option.port)
 				if obj.requestCallBack != nil {
 					if err = obj.requestCallBack(r, nil); err != nil {
 						server.Close()
@@ -309,7 +310,7 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 	tlsConfig.GetConfigForClient = func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
 		serverName := chi.ServerName
 		if serverName == "" {
-			serverName = tools.GetServerName(client.option.host)
+			serverName = requests.GetServerName(client.option.host)
 		}
 		tlsServer, peerCertificates, negotiatedProtocol, err = obj.tlsServer(ctx, server, serverName, chi.SupportedProtos, client.option.ja3Spec)
 		if err != nil {
@@ -322,13 +323,13 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 		if len(peerCertificates) > 0 {
 			preCert := peerCertificates[0]
 			if chi.ServerName == "" && preCert.IPAddresses == nil && serverName != "" {
-				if ip, ipType := tools.ParseHost(serverName); ipType != 0 {
+				if ip, ipType := requests.ParseHost(serverName); ipType != 0 {
 					preCert.IPAddresses = []net.IP{ip}
 				}
 			}
-			cert, err = tools.CreateProxyCertWithCert(nil, nil, preCert)
+			cert, err = requests.CreateProxyCertWithCert(nil, nil, preCert)
 		} else {
-			cert, err = tools.CreateProxyCertWithName(serverName)
+			cert, err = requests.CreateProxyCertWithName(serverName)
 		}
 		if err != nil {
 			return nil, err
@@ -354,7 +355,7 @@ func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, ne
 	if ja3Spec.IsSet() {
 		utlsConfig := obj.UtlsConfig()
 		utlsConfig.NextProtos = nextProtos
-		utlsConfig.ServerName = tools.GetServerName(addr)
+		utlsConfig.ServerName = requests.GetServerName(addr)
 
 		session, ok := obj.clientSessionCache.Get(addr)
 		oneSessionCache := ja3.NewOneSessionCache(session)
@@ -379,7 +380,7 @@ func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, ne
 	} else {
 		tlsConfig := obj.TlsConfig()
 		tlsConfig.NextProtos = nextProtos
-		tlsConfig.ServerName = tools.GetServerName(addr)
+		tlsConfig.ServerName = requests.GetServerName(addr)
 		tlsConn := tls.Client(conn, tlsConfig)
 		if err := tlsConn.HandshakeContext(ctx); err != nil {
 			return tlsConn, nil, "", err
