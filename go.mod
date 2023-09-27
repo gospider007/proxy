@@ -17,7 +17,6 @@ require (
 	gitee.com/baixudong/bar v0.0.0-20230923032414-c19cc384edeb // indirect
 	gitee.com/baixudong/blog v0.0.0-20230923032533-d83e7cb672f7 // indirect
 	gitee.com/baixudong/bs4 v0.0.0-20230923032731-cc82de4893bd // indirect
-	gitee.com/baixudong/bson v0.0.0-20230926055556-209f126c0a34 // indirect
 	gitee.com/baixudong/re v0.0.0-20230809033040-360c1d945e59 // indirect
 	github.com/PuerkitoBio/goquery v1.8.1 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
@@ -26,11 +25,14 @@ require (
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/gaukas/godicttls v0.0.4 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/gobwas/ws v1.2.1 // indirect
+	github.com/google/pprof v0.0.0-20230926050212-f7f687d19a98 // indirect
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/onsi/ginkgo/v2 v2.12.1 // indirect
 	github.com/quic-go/quic-go v0.39.0 // indirect
 	github.com/tidwall/gjson v1.17.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
