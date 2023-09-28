@@ -5,10 +5,10 @@ go 1.21.1
 require (
 	gitee.com/baixudong/ja3 v0.0.0-20230927070510-152bc4a3675a
 	gitee.com/baixudong/kinds v0.0.0-20230809033013-c3d6d3479f8c
-	gitee.com/baixudong/net v0.0.0-20230923032225-d53725e7011a
-	gitee.com/baixudong/requests v0.0.0-20230927080706-33c51ed9ac32
+	gitee.com/baixudong/net v0.0.0-20230927083058-4a6a7a20f917
+	gitee.com/baixudong/requests v0.0.0-20230928055539-56c659510c90
 	gitee.com/baixudong/tools v0.0.0-20230926010219-77f29cbf5935
-	gitee.com/baixudong/websocket v0.0.0-20230927034519-3bef09dccc0f
+	gitee.com/baixudong/websocket v0.0.0-20230927082325-5b4eb178c3ec
 	github.com/refraction-networking/utls v1.5.3
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 )
@@ -16,8 +16,8 @@ require (
 require (
 	gitee.com/baixudong/bar v0.0.0-20230923032414-c19cc384edeb // indirect
 	gitee.com/baixudong/blog v0.0.0-20230923032533-d83e7cb672f7 // indirect
-	gitee.com/baixudong/bs4 v0.0.0-20230927062753-f5145bca0107 // indirect
-	gitee.com/baixudong/gson v0.0.0-20230927054719-a259dd672035 // indirect
+	gitee.com/baixudong/bs4 v0.0.0-20230927091031-00dd545f5784 // indirect
+	gitee.com/baixudong/gson v0.0.0-20230927090937-556b58fb6899 // indirect
 	gitee.com/baixudong/re v0.0.0-20230809033040-360c1d945e59 // indirect
 	github.com/PuerkitoBio/goquery v1.8.1 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
@@ -25,6 +25,7 @@ require (
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/gaukas/godicttls v0.0.4 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.0 // indirect
