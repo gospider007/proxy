@@ -73,7 +73,6 @@ const (
 )
 
 type Client struct {
-	clientSessionCache  utls.ClientSessionCache
 	debug               bool
 	disVerify           bool
 	requestCallBack     func(*http.Request, *http.Response) error
@@ -120,10 +119,12 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	}
 	if option.UtlsConfig == nil {
 		option.UtlsConfig = &utls.Config{
-			InsecureSkipVerify:     true,
-			InsecureSkipTimeVerify: true,
-			SessionTicketKey:       [32]byte{},
-			ClientSessionCache:     utls.NewLRUClientSessionCache(0),
+			InsecureSkipVerify:                 true,
+			SessionTicketKey:                   [32]byte{},
+			ClientSessionCache:                 utls.NewLRUClientSessionCache(0),
+			InsecureSkipTimeVerify:             true,
+			OmitEmptyPsk:                       true,
+			PreferSkipResumptionOnNilExtension: true,
 		}
 	}
 	if !option.Ja3Spec.IsSet() && option.Ja3 {
@@ -132,9 +133,7 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	if !option.H2Ja3Spec.IsSet() && option.H2Ja3 {
 		option.H2Ja3Spec = ja3.DefaultH2Ja3Spec()
 	}
-
 	server := Client{
-		clientSessionCache:  ja3.NewClientSessionCache(),
 		tlsConfig:           option.TlsConfig,
 		utlsConfig:          option.UtlsConfig,
 		getProxy:            option.GetProxy,

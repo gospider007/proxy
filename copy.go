@@ -297,10 +297,8 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 			}
 			server = newProxyCon(ctx, tlsServer, bufio.NewReader(tlsServer), *server.option, false)
 			server.option.http2 = negotiatedProtocol == "h2"
-			return obj.copyHttpMain(ctx, client, server)
-		} else { //服务端直连
-			return obj.copyHttpMain(ctx, client, server)
 		}
+		return obj.copyHttpMain(ctx, client, server)
 	}
 	var tlsClient *tls.Conn
 	var tlsServer net.Conn
@@ -356,25 +354,9 @@ func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, ne
 		utlsConfig := obj.UtlsConfig()
 		utlsConfig.NextProtos = nextProtos
 		utlsConfig.ServerName = requests.GetServerName(addr)
-
-		session, ok := obj.clientSessionCache.Get(addr)
-		oneSessionCache := ja3.NewOneSessionCache(session)
-		utlsConfig.ClientSessionCache = oneSessionCache
-		if ok {
-			if !ja3Spec.HasPsk() {
-				ja3.AddPsk(&ja3Spec)
-			}
-		} else {
-			if ja3Spec.HasPsk() {
-				ja3.DelPsk(&ja3Spec)
-			}
-		}
 		tlsConn, err := ja3.NewClient(ctx, conn, ja3Spec, !slices.Contains(nextProtos, "h2"), utlsConfig)
 		if err != nil {
 			return tlsConn, nil, "", err
-		}
-		if oneSessionCache.Session() != nil && tlsConn.ConnectionState().HandshakeComplete && tlsConn.ConnectionState().Version == tls.VersionTLS13 && !tlsConn.HandshakeState.State13.UsingPSK {
-			obj.clientSessionCache.Put(addr, oneSessionCache.Session())
 		}
 		return tlsConn, tlsConn.ConnectionState().PeerCertificates, tlsConn.ConnectionState().NegotiatedProtocol, nil
 	} else {

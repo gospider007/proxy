@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-
 	"net/http"
 )
 
@@ -78,5 +77,8 @@ func (obj *Client) httpsHandle(ctx context.Context, client *ProxyConn) error {
 	tlsConfig.NextProtos = []string{"http/1.1"}
 	tlsClient := tls.Server(client, tlsConfig)
 	defer tlsClient.Close()
+	if err := tlsClient.HandshakeContext(ctx); err != nil {
+		return err
+	}
 	return obj.httpHandle(ctx, newProxyCon(ctx, tlsClient, bufio.NewReader(tlsClient), *client.option, true))
 }
