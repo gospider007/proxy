@@ -10,11 +10,11 @@ import (
 
 	"net/http"
 
-	"gitee.com/baixudong/ja3"
-	"gitee.com/baixudong/net/http2"
-	"gitee.com/baixudong/requests"
-	"gitee.com/baixudong/tools"
-	"gitee.com/baixudong/websocket"
+	"github.com/gospider007/gtls"
+	"github.com/gospider007/ja3"
+	"github.com/gospider007/net/http2"
+	"github.com/gospider007/tools"
+	"github.com/gospider007/websocket"
 	utls "github.com/refraction-networking/utls"
 	"golang.org/x/exp/slices"
 )
@@ -65,6 +65,9 @@ type erringRoundTripper interface {
 func (obj *Client) TlsConfig() *tls.Config {
 	return obj.tlsConfig.Clone()
 }
+func (obj *Client) ProxyTlsConfig() *tls.Config {
+	return obj.proxyTlsConfig.Clone()
+}
 func (obj *Client) UtlsConfig() *utls.Config {
 	return obj.utlsConfig.Clone()
 }
@@ -91,7 +94,7 @@ func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server 
 		Handler: http.HandlerFunc(
 			func(w http.ResponseWriter, r *http.Request) {
 				r.URL.Scheme = "https"
-				r.URL.Host = net.JoinHostPort(requests.GetServerName(client.option.host), client.option.port)
+				r.URL.Host = net.JoinHostPort(gtls.GetServerName(client.option.host), client.option.port)
 				if obj.requestCallBack != nil {
 					if err = obj.requestCallBack(r, nil); err != nil {
 						server.Close()
@@ -308,7 +311,7 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 	tlsConfig.GetConfigForClient = func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
 		serverName := chi.ServerName
 		if serverName == "" {
-			serverName = requests.GetServerName(client.option.host)
+			serverName = gtls.GetServerName(client.option.host)
 		}
 		tlsServer, peerCertificates, negotiatedProtocol, err = obj.tlsServer(ctx, server, serverName, chi.SupportedProtos, client.option.ja3Spec)
 		if err != nil {
@@ -321,13 +324,13 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 		if len(peerCertificates) > 0 {
 			preCert := peerCertificates[0]
 			if chi.ServerName == "" && preCert.IPAddresses == nil && serverName != "" {
-				if ip, ipType := requests.ParseHost(serverName); ipType != 0 {
+				if ip, ipType := gtls.ParseHost(serverName); ipType != 0 {
 					preCert.IPAddresses = []net.IP{ip}
 				}
 			}
-			cert, err = requests.CreateProxyCertWithCert(nil, nil, preCert)
+			cert, err = gtls.CreateProxyCertWithCert(nil, nil, preCert)
 		} else {
-			cert, err = requests.CreateProxyCertWithName(serverName)
+			cert, err = gtls.CreateProxyCertWithName(serverName)
 		}
 		if err != nil {
 			return nil, err
@@ -353,7 +356,7 @@ func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, ne
 	if ja3Spec.IsSet() {
 		utlsConfig := obj.UtlsConfig()
 		utlsConfig.NextProtos = nextProtos
-		utlsConfig.ServerName = requests.GetServerName(addr)
+		utlsConfig.ServerName = gtls.GetServerName(addr)
 		tlsConn, err := ja3.NewClient(ctx, conn, ja3Spec, !slices.Contains(nextProtos, "h2"), utlsConfig)
 		if err != nil {
 			return tlsConn, nil, "", err
@@ -362,7 +365,7 @@ func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, ne
 	} else {
 		tlsConfig := obj.TlsConfig()
 		tlsConfig.NextProtos = nextProtos
-		tlsConfig.ServerName = requests.GetServerName(addr)
+		tlsConfig.ServerName = gtls.GetServerName(addr)
 		tlsConn := tls.Client(conn, tlsConfig)
 		if err := tlsConn.HandshakeContext(ctx); err != nil {
 			return tlsConn, nil, "", err

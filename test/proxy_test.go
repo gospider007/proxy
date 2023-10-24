@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"gitee.com/baixudong/proxy"
-	"gitee.com/baixudong/requests"
+	"github.com/gospider007/proxy"
+	"github.com/gospider007/requests"
 )
 
 func TestProxy(t *testing.T) {

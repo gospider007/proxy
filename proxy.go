@@ -15,22 +15,25 @@ import (
 
 	"net/http"
 
-	"gitee.com/baixudong/ja3"
-	"gitee.com/baixudong/kinds"
-	"gitee.com/baixudong/requests"
-	"gitee.com/baixudong/tools"
-	"gitee.com/baixudong/websocket"
+	"github.com/gospider007/gtls"
+	"github.com/gospider007/ja3"
+	"github.com/gospider007/kinds"
+	"github.com/gospider007/requests"
+	"github.com/gospider007/tools"
+	"github.com/gospider007/websocket"
 	utls "github.com/refraction-networking/utls"
 )
 
 type ClientOption struct {
-	Usr     string   //用户名
-	Pwd     string   //密码
-	IpWhite []net.IP //白名单 192.168.1.1,192.168.1.2
-	Port    int      //代理端口
-	Host    string   //代理host
-	CrtFile []byte   //公钥,根证书
-	KeyFile []byte   //私钥
+	Usr        string   //用户名
+	Pwd        string   //密码
+	IpWhite    []net.IP //白名单 192.168.1.1,192.168.1.2
+	Port       int      //代理端口
+	Host       string   //代理host
+	CrtFile    []byte   //公钥,根证书
+	KeyFile    []byte   //私钥
+	AcmeDomain string
+	AcmeEmail  string
 
 	TLSHandshakeTimeout time.Duration                                           //tls 握手超时时间
 	DialTimeout         time.Duration                                           //tls 握手超时时间
@@ -99,7 +102,9 @@ type Client struct {
 	host     string
 	port     string
 
-	tlsConfig  *tls.Config
+	tlsConfig      *tls.Config
+	proxyTlsConfig *tls.Config
+
 	utlsConfig *utls.Config
 
 	getProxy func(ctx context.Context, url *url.URL) (string, error) //代理ip http://116.62.55.139:8888
@@ -150,7 +155,7 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 
 	var err error
 	if option.Proxy != "" {
-		if server.proxy, err = requests.VerifyProxy(option.Proxy); err != nil {
+		if server.proxy, err = gtls.VerifyProxy(option.Proxy); err != nil {
 			return nil, err
 		}
 	}
@@ -179,13 +184,27 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		Dns:         option.Dns,
 	})
 	//证书
-	if option.CrtFile == nil || option.KeyFile == nil {
-		if server.cert, err = requests.CreateProxyCertWithName(option.ServerName); err != nil {
-			return nil, err
-		}
-	} else {
+	server.proxyTlsConfig = new(tls.Config)
+
+	if option.CrtFile != nil && option.KeyFile != nil {
 		if server.cert, err = tls.X509KeyPair(option.CrtFile, option.KeyFile); err != nil {
 			return nil, err
+		}
+		server.proxyTlsConfig.Certificates = []tls.Certificate{server.cert}
+		server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
+	} else {
+		if server.cert, err = gtls.CreateProxyCertWithName(option.ServerName); err != nil {
+			return nil, err
+		}
+		if option.AcmeDomain != "" && option.AcmeEmail != "" {
+			if acme, err := gtls.CreateAcme(option.AcmeDomain, option.AcmeEmail); err != nil {
+				return nil, err
+			} else {
+				server.proxyTlsConfig = acme.TLSConfig([]string{"http/1.1"})
+			}
+		} else {
+			server.proxyTlsConfig.Certificates = []tls.Certificate{server.cert}
+			server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
 		}
 	}
 	//构造listen
@@ -207,7 +226,7 @@ func (obj *Client) GetProxy(ctx context.Context, href *url.URL) (*url.URL, error
 		if err != nil {
 			return nil, err
 		}
-		return requests.VerifyProxy(proxy)
+		return gtls.VerifyProxy(proxy)
 	}
 	return nil, nil
 }

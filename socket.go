@@ -16,7 +16,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"gitee.com/baixudong/tools"
+	"github.com/gospider007/tools"
 )
 
 func (obj *Client) getUdpData(content []byte) (net.IP, int, []byte, error) {

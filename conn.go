@@ -8,9 +8,9 @@ import (
 
 	"net/http"
 
-	"gitee.com/baixudong/ja3"
-	"gitee.com/baixudong/requests"
-	"gitee.com/baixudong/websocket"
+	"github.com/gospider007/ja3"
+	"github.com/gospider007/requests"
+	"github.com/gospider007/websocket"
 )
 
 type ProxyOption struct {

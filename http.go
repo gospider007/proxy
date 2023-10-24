@@ -72,10 +72,7 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 }
 func (obj *Client) httpsHandle(ctx context.Context, client *ProxyConn) error {
 	defer client.Close()
-	tlsConfig := obj.TlsConfig()
-	tlsConfig.Certificates = []tls.Certificate{obj.cert}
-	tlsConfig.NextProtos = []string{"http/1.1"}
-	tlsClient := tls.Server(client, tlsConfig)
+	tlsClient := tls.Server(client, obj.ProxyTlsConfig())
 	defer tlsClient.Close()
 	if err := tlsClient.HandshakeContext(ctx); err != nil {
 		return err
