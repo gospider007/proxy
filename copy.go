@@ -20,8 +20,8 @@ import (
 )
 
 func (obj *Client) wsSend(ctx context.Context, wsClient *websocket.Conn, wsServer *websocket.Conn) (err error) {
-	defer wsServer.Close("close")
-	defer wsClient.Close("close")
+	defer wsServer.Close()
+	defer wsClient.Close()
 	var msgType websocket.MessageType
 	var msgData []byte
 	for {
@@ -39,8 +39,8 @@ func (obj *Client) wsSend(ctx context.Context, wsClient *websocket.Conn, wsServe
 	}
 }
 func (obj *Client) wsRecv(ctx context.Context, wsClient *websocket.Conn, wsServer *websocket.Conn) (err error) {
-	defer wsServer.Close("close")
-	defer wsClient.Close("close")
+	defer wsServer.Close()
+	defer wsClient.Close()
 	var msgType websocket.MessageType
 	var msgData []byte
 	for {
@@ -276,8 +276,8 @@ func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *
 	//ws 开始回调
 	wsClient := websocket.NewConn(client, false, client.option.wsOption)
 	wsServer := websocket.NewConn(server, true, server.option.wsOption)
-	defer wsServer.Close("close")
-	defer wsClient.Close("close")
+	defer wsServer.Close()
+	defer wsClient.Close()
 	go obj.wsRecv(ctx, wsClient, wsServer)
 	return obj.wsSend(ctx, wsClient, wsServer)
 }
