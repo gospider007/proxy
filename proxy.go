@@ -10,7 +10,6 @@ import (
 	"log"
 	"net"
 	"net/url"
-	"strconv"
 	"time"
 
 	"net/http"
@@ -28,10 +27,9 @@ type ClientOption struct {
 	Usr        string   //用户名
 	Pwd        string   //密码
 	IpWhite    []net.IP //白名单 192.168.1.1,192.168.1.2
-	Port       int      //代理端口
-	Host       string   //代理host
-	CrtFile    []byte   //公钥,根证书
-	KeyFile    []byte   //私钥
+	Addr       string
+	CrtFile    []byte //公钥,根证书
+	KeyFile    []byte //私钥
 	AcmeDomain string
 	AcmeEmail  string
 
@@ -152,7 +150,9 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		ja3Spec:             option.Ja3Spec,
 		h2Ja3Spec:           option.H2Ja3Spec,
 	}
-
+	if option.Addr == "" {
+		option.Addr = ":0"
+	}
 	var err error
 	if option.Proxy != "" {
 		if server.proxy, err = gtls.VerifyProxy(option.Proxy); err != nil {
@@ -208,7 +208,7 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		}
 	}
 	//构造listen
-	if server.listener, err = net.Listen("tcp", net.JoinHostPort(option.Host, strconv.Itoa(option.Port))); err != nil {
+	if server.listener, err = net.Listen("tcp", option.Addr); err != nil {
 		return nil, err
 	}
 	if server.host, server.port, err = net.SplitHostPort(server.listener.Addr().String()); err != nil {

@@ -7,9 +7,9 @@ require (
 	github.com/gospider007/ja3 v0.0.0-20231029025157-38fc2f8f2d91
 	github.com/gospider007/kinds v0.0.0-20231024093643-7a4424f2d30e
 	github.com/gospider007/net v0.0.0-20231028084010-313c148cf0a1
-	github.com/gospider007/requests v0.0.0-20231102021202-e88d0736bcb8
-	github.com/gospider007/tools v0.0.0-20231024115950-be51fa815fcd
-	github.com/gospider007/websocket v0.0.0-20231102021107-d34612e770bd
+	github.com/gospider007/requests v0.0.0-20231104022841-085f41b45ee0
+	github.com/gospider007/tools v0.0.0-20231104124710-69ac32876ccc
+	github.com/gospider007/websocket v0.0.0-20231104023155-0d1a787293d3
 	github.com/refraction-networking/utls v1.5.4
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 )
