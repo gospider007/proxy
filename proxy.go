@@ -39,7 +39,7 @@ type ClientOption struct {
 	Proxy               string                                                  //代理ip http://192.168.1.50:8888
 	KeepAlive           time.Duration                                           //保活时间
 	LocalAddr           *net.TCPAddr                                            //本地网卡出口
-	Dns                 net.IP
+	Dns                 *net.UDPAddr
 	ServerName          string                         //https 域名或ip
 	Vpn                 bool                           //是否是vpn
 	AddrType            requests.AddrType              //host优先解析的类型
@@ -174,7 +174,7 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		server.ipWhite.Add(ip_white.String())
 	}
 	//dialer
-	server.dialer = requests.NewDail(server.ctx, requests.DialOption{
+	server.dialer = requests.NewDail(requests.DialOption{
 		DialTimeout: option.DialTimeout,
 		KeepAlive:   option.KeepAlive,
 		LocalAddr:   option.LocalAddr,
