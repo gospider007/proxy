@@ -7,8 +7,8 @@ require (
 	github.com/gospider007/ja3 v0.0.0-20231029025157-38fc2f8f2d91
 	github.com/gospider007/kinds v0.0.0-20231024093643-7a4424f2d30e
 	github.com/gospider007/net v0.0.0-20231028084010-313c148cf0a1
-	github.com/gospider007/requests v0.0.0-20231109073812-a8a1e0dc56a9
-	github.com/gospider007/tools v0.0.0-20231104124710-69ac32876ccc
+	github.com/gospider007/requests v0.0.0-20231110100222-81c174810fd9
+	github.com/gospider007/tools v0.0.0-20231110011734-c2a4739ea0a0
 	github.com/gospider007/websocket v0.0.0-20231104023155-0d1a787293d3
 	github.com/refraction-networking/utls v1.5.4
 	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678
@@ -24,7 +24,7 @@ require (
 	github.com/gospider007/bar v0.0.0-20231024075629-3f50832a4cbf // indirect
 	github.com/gospider007/blog v0.0.0-20231024075658-5da1a801a2c8 // indirect
 	github.com/gospider007/bs4 v0.0.0-20231024075735-6bbdac929d8b // indirect
-	github.com/gospider007/gson v0.0.0-20231108025125-ff62d4066dc4 // indirect
+	github.com/gospider007/gson v0.0.0-20231110081735-fa6816715498 // indirect
 	github.com/gospider007/re v0.0.0-20231024115818-adfd03636256 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect

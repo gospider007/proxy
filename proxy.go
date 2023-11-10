@@ -40,10 +40,10 @@ type ClientOption struct {
 	KeepAlive           time.Duration                                           //保活时间
 	LocalAddr           *net.TCPAddr                                            //本地网卡出口
 	Dns                 *net.UDPAddr
-	ServerName          string                     //https 域名或ip
-	Vpn                 bool                       //是否是vpn
-	AddrType            gtls.AddrType              //host优先解析的类型
-	GetAddrType         func(string) gtls.AddrType //控制host优先解析的类型
+	ServerName          string                          //https 域名或ip
+	Vpn                 bool                            //是否是vpn
+	AddrType            gtls.AddrType                   //host优先解析的类型
+	GetAddrType         func(host string) gtls.AddrType //控制host优先解析的类型
 
 	Debug     bool //是否打印debug
 	DisVerify bool //关闭验证
