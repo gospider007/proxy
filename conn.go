@@ -89,7 +89,7 @@ func (obj *ProxyConn) readResponse(req *http.Request) (*http.Response, error) {
 	}
 	return response, err
 }
-func (obj *ProxyConn) readRequest(ctx context.Context, requestCallBack func(*http.Request, *http.Response) error) (*http.Request, error) {
+func (obj *ProxyConn) readRequest(ctx context.Context, requestCallBack func(*http.Request, *http.Response) error, client *Client) (*http.Request, error) {
 	var clientReq *http.Request
 	var err error
 	done := make(chan struct{})
@@ -104,6 +104,15 @@ func (obj *ProxyConn) readRequest(ctx context.Context, requestCallBack func(*htt
 	}
 	if err != nil {
 		return clientReq, err
+	}
+	if client != nil {
+		if client.verifyAuthWithHttp != nil {
+			if err = client.verifyAuthWithHttp(clientReq); err != nil {
+				return clientReq, err
+			}
+		} else if err = client.verifyPwd(obj, clientReq); err != nil {
+			return clientReq, err
+		}
 	}
 	if requestCallBack != nil {
 		if err = requestCallBack(clientReq, nil); err != nil {

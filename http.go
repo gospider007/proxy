@@ -14,22 +14,14 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 	var err error
 	var clientReq *http.Request
 	if obj.httpConnectCallBack == nil {
-		clientReq, err = client.readRequest(ctx, nil)
+		clientReq, err = client.readRequest(ctx, nil, obj)
 	} else {
 		clientReq, err = client.readRequest(ctx, func(r1 *http.Request, r2 *http.Response) error {
 			return obj.httpConnectCallBack(r1)
-		})
+		}, obj)
 	}
 	if err != nil {
 		return err
-	}
-	if err = obj.verifyPwd(client, clientReq); err != nil {
-		return err
-	}
-	if obj.verifyAuthWithHttp != nil {
-		if err = obj.verifyAuthWithHttp(clientReq); err != nil {
-			return err
-		}
 	}
 	proxyUrl, err := obj.GetProxy(ctx, clientReq.URL)
 	if err != nil {

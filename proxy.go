@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"net/url"
+	"strings"
 	"time"
 
 	"net/http"
@@ -33,17 +34,15 @@ type ClientOption struct {
 	AcmeDomain string
 	AcmeEmail  string
 
-	TLSHandshakeTimeout time.Duration                                           //tls 握手超时时间
-	DialTimeout         time.Duration                                           //tls 握手超时时间
-	GetProxy            func(ctx context.Context, url *url.URL) (string, error) //代理ip http://116.62.55.139:8888
-	Proxy               string                                                  //代理ip http://192.168.1.50:8888
-	KeepAlive           time.Duration                                           //保活时间
-	LocalAddr           *net.TCPAddr                                            //本地网卡出口
-	Dns                 *net.UDPAddr
-	ServerName          string                          //https 域名或ip
-	Vpn                 bool                            //是否是vpn
-	AddrType            gtls.AddrType                   //host优先解析的类型
-	GetAddrType         func(host string) gtls.AddrType //控制host优先解析的类型
+	GetProxy func(ctx context.Context, url *url.URL) (string, error) //代理ip http://116.62.55.139:8888
+	Proxy    string                                                  //代理ip http://192.168.1.50:8888
+
+	DialTimeout time.Duration                   //tls 握手超时时间
+	KeepAlive   time.Duration                   //保活时间
+	LocalAddr   *net.TCPAddr                    //本地网卡出口
+	GetAddrType func(host string) gtls.AddrType //控制host优先解析的类型
+	AddrType    gtls.AddrType                   //host优先解析的类型
+	Dns         *net.UDPAddr
 
 	Debug     bool //是否打印debug
 	DisVerify bool //关闭验证
@@ -93,7 +92,6 @@ type Client struct {
 	basic    string
 	usr      string
 	pwd      string
-	vpn      bool
 	ipWhite  *kinds.Set[string]
 	ctx      context.Context
 	cnl      context.CancelFunc
@@ -113,6 +111,12 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	if pre_ctx == nil {
 		pre_ctx = context.TODO()
 	}
+	ctxData, err := requests.NewReqCtxData(pre_ctx, &requests.RequestOption{})
+	if err != nil {
+		return nil, err
+	}
+	pre_ctx = requests.CreateReqCtx(pre_ctx, ctxData)
+
 	if option.TlsConfig == nil {
 		option.TlsConfig = &tls.Config{
 			InsecureSkipVerify: true,
@@ -153,18 +157,14 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	if option.Addr == "" {
 		option.Addr = ":0"
 	}
-	var err error
 	if option.Proxy != "" {
 		if server.proxy, err = gtls.VerifyProxy(option.Proxy); err != nil {
 			return nil, err
 		}
 	}
 	server.ctx, server.cnl = context.WithCancel(pre_ctx)
-	if option.Vpn {
-		server.vpn = option.Vpn
-	}
 	if option.Usr != "" && option.Pwd != "" {
-		server.basic = "Basic " + tools.Base64Encode(option.Usr+":"+option.Pwd)
+		server.basic = tools.Base64Encode(option.Usr + ":" + option.Pwd)
 		server.usr = option.Usr
 		server.pwd = option.Pwd
 	}
@@ -193,9 +193,6 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		server.proxyTlsConfig.Certificates = []tls.Certificate{server.cert}
 		server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
 	} else {
-		if server.cert, err = gtls.CreateProxyCertWithName(option.ServerName); err != nil {
-			return nil, err
-		}
 		if option.AcmeDomain != "" && option.AcmeEmail != "" {
 			if acme, err := gtls.CreateAcme(option.AcmeDomain, option.AcmeEmail); err != nil {
 				return nil, err
@@ -274,11 +271,23 @@ func (obj *Client) whiteVerify(client net.Conn) bool {
 
 // 返回:请求所有内容,第一行的内容被" "分割的数组,第一行的内容,error
 func (obj *Client) verifyPwd(client net.Conn, clientReq *http.Request) error {
-	if obj.basic != "" && clientReq.Header.Get("Proxy-Authorization") != obj.basic && !obj.whiteVerify(client) { //验证密码是否正确
-		client.Write([]byte(fmt.Sprintf("%s 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic\r\n\r\n", clientReq.Proto)))
-		return errors.New("auth verify fail")
+	if obj.basic == "" {
+		return nil
 	}
-	return nil
+	for kk, vvs := range clientReq.Header {
+		if strings.Contains(kk, "Authorization") {
+			for _, vv := range vvs {
+				if strings.Contains(vv, obj.basic) {
+					return nil
+				}
+			}
+		}
+	}
+	if obj.whiteVerify(client) {
+		return nil
+	}
+	client.Write([]byte(fmt.Sprintf("%s 407 Authentication Required\r\nAuthenticate: Basic\r\n\r\n", clientReq.Proto)))
+	return errors.New("auth verify fail")
 }
 
 func (obj *Client) mainHandle(ctx context.Context, client net.Conn) (err error) {
@@ -301,12 +310,6 @@ func (obj *Client) mainHandle(ctx context.Context, client net.Conn) (err error) 
 	firstCons, err := clientReader.Peek(1)
 	if err != nil {
 		return err
-	}
-	if obj.vpn {
-		if firstCons[0] == 22 {
-			return obj.httpsHandle(ctx, newProxyCon(ctx, client, clientReader, ProxyOption{}, true))
-		}
-		return fmt.Errorf("vpn error first byte: %d", firstCons[0])
 	}
 	switch firstCons[0] {
 	case 5: //socks5 代理

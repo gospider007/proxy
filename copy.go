@@ -151,7 +151,7 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 		if client.req != nil {
 			req, client.req = client.req, nil
 		} else {
-			if req, err = client.readRequest(ctx, obj.requestCallBack); err != nil {
+			if req, err = client.readRequest(ctx, obj.requestCallBack, nil); err != nil {
 				return
 			}
 		}
@@ -186,7 +186,7 @@ func (obj *Client) http11Copy(ctx context.Context, client *ProxyConn, server *Pr
 		if client.req != nil {
 			req, client.req = client.req, nil
 		} else {
-			if req, err = client.readRequest(ctx, obj.requestCallBack); err != nil {
+			if req, err = client.readRequest(ctx, obj.requestCallBack, nil); err != nil {
 				return
 			}
 		}
