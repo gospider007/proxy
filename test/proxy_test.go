@@ -116,7 +116,7 @@ func TestProxyJa3(t *testing.T) {
 		t.Fatal(err)
 	}
 	log.Print("ddd0")
-	// reqCli.TryNum = 2
+	// reqCli.MaxRetries = 2
 	// resp, err := reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{})
 	resp, err := reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{Proxy: "http://admin:password@" + proxyIp})
 	// resp, err := reqCli.Request(nil, "get", "https://myip.top", requests.RequestOption{Proxy: "http://admin:password@" + proxyIp})
@@ -211,7 +211,7 @@ func TestProxyAuth(t *testing.T) {
 	go proCli.Run()
 	proxyIp := proCli.Addr()
 	reqCli, err := requests.NewClient(nil, requests.ClientOption{
-		TryNum: 2,
+		MaxRetries: 2,
 	})
 	if err != nil {
 		t.Fatal(err)
