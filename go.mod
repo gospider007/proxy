@@ -3,12 +3,12 @@ module github.com/gospider007/proxy
 go 1.21.3
 
 require (
-	github.com/gospider007/gtls v0.0.0-20231109073720-32fe741c06d3
+	github.com/gospider007/gtls v0.0.0-20231120122450-e763299259db
 	github.com/gospider007/ja3 v0.0.0-20231029025157-38fc2f8f2d91
 	github.com/gospider007/kinds v0.0.0-20231024093643-7a4424f2d30e
 	github.com/gospider007/net v0.0.0-20231028084010-313c148cf0a1
-	github.com/gospider007/requests v0.0.0-20231120062613-0d4cb5a4d455
-	github.com/gospider007/tools v0.0.0-20231119141642-40c946cfdb81
+	github.com/gospider007/requests v0.0.0-20231121021403-c7e857ed37cf
+	github.com/gospider007/tools v0.0.0-20231120122411-d631cc2fc371
 	github.com/gospider007/websocket v0.0.0-20231114095858-b8bc9b2033d3
 	github.com/refraction-networking/utls v1.5.4
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
