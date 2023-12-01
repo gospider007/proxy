@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+
+	"github.com/gospider007/requests"
 )
 
 func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
@@ -30,7 +32,7 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 	var proxyServer net.Conn
 	host := clientReq.Host
 	addr := net.JoinHostPort(clientReq.URL.Hostname(), clientReq.URL.Port())
-	if proxyServer, err = obj.dialer.DialContextWithProxy(ctx, "tcp", client.option.schema, addr, host, proxyUrl, obj.TlsConfig()); err != nil {
+	if proxyServer, err = obj.dialer.DialContextWithProxy(ctx, requests.GetReqCtxData(ctx), "tcp", client.option.schema, addr, host, proxyUrl, obj.TlsConfig()); err != nil {
 		return err
 	}
 	server := newProxyCon(ctx, proxyServer, bufio.NewReader(proxyServer), *client.option, false)

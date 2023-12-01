@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/gospider007/requests"
 	"github.com/gospider007/tools"
 )
 
@@ -166,7 +167,7 @@ func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
 		client.option.method = http.MethodConnect
 	}
 	netword := "tcp"
-	proxyServer, err := obj.dialer.DialContextWithProxy(ctx, netword, client.option.schema, addr, host, proxyUrl, obj.TlsConfig())
+	proxyServer, err := obj.dialer.DialContextWithProxy(ctx, requests.GetReqCtxData(ctx), netword, client.option.schema, addr, host, proxyUrl, obj.TlsConfig())
 	if err != nil {
 		return err
 	}
