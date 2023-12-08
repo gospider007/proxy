@@ -7,6 +7,8 @@ github.com/andybalholm/cascadia v1.3.2 h1:3Xi6Dw5lHF15JtdcmAHD3i1+T8plmv7BQ/nsVi
 github.com/andybalholm/cascadia v1.3.2/go.mod h1:7gtRlve5FxPPgIgX36uWBX58OdBsSS6lUvCFb+h7KvU=
 github.com/caddyserver/certmagic v0.19.2 h1:HZd1AKLx4592MalEGQS39DKs2ZOAJCEM/xYPMQ2/ui0=
 github.com/caddyserver/certmagic v0.19.2/go.mod h1:fsL01NomQ6N+kE2j37ZCnig2MFosG+MIO4ztnmG/zz8=
+github.com/caddyserver/certmagic v0.20.0 h1:bTw7LcEZAh9ucYCRXyCpIrSAGplplI0vGYJ4BpCQ/Fc=
+github.com/caddyserver/certmagic v0.20.0/go.mod h1:N4sXgpICQUskEWpj7zVzvWD41p3NYacrNoZYiRM2jTg=
 github.com/cloudflare/circl v1.3.5 h1:g+wWynZqVALYAlpSQFAa7TscDnUK8mKYtrxMpw6AUKo=
 github.com/cloudflare/circl v1.3.5/go.mod h1:5XYMA4rFBvNIrhs50XuiBJ15vF2pZn4nnUKZrLbUZFA=
 github.com/cloudflare/circl v1.3.6 h1:/xbKIqSHbZXHwkhbrhrt2YOHIwYJlXH94E3tI/gDlUg=
@@ -67,6 +69,8 @@ github.com/gospider007/ja3 v0.0.0-20231024093217-2de3491f0fe3 h1:D1+cjymqnpi5lE0
 github.com/gospider007/ja3 v0.0.0-20231024093217-2de3491f0fe3/go.mod h1:dBFCulBJWzGEikp1LmEXUo6yOBDEqMcVQ9dfqVqFg3k=
 github.com/gospider007/ja3 v0.0.0-20231029025157-38fc2f8f2d91 h1:qQokihfTAX+/U8GIMvZauRtE4G+/1Jq8XIJx8xLr04A=
 github.com/gospider007/ja3 v0.0.0-20231029025157-38fc2f8f2d91/go.mod h1:ur78/uhYDDULSy1ldA/pPpGhjk973Q1VsPnbktXGU/g=
+github.com/gospider007/ja3 v0.0.0-20231202085054-c1b92675187e h1:6Brr8+E6fht8IVFBJBkUoFMr8HQ9yzsrVxt8m/wVtQ8=
+github.com/gospider007/ja3 v0.0.0-20231202085054-c1b92675187e/go.mod h1:kWf9x0hQS+pgOpu1lRiVdE5nozLj71j740cWvjzKqok=
 github.com/gospider007/kinds v0.0.0-20231024093643-7a4424f2d30e h1:lmX6IQKkrNDbXfHsvrv1Uz0MoG2v5+4VC6Gdh9irUNY=
 github.com/gospider007/kinds v0.0.0-20231024093643-7a4424f2d30e/go.mod h1:nB4OMmd8Ji92yEmgjbHcqLcBHTAhSSmlGNb2JpTYK9A=
 github.com/gospider007/net v0.0.0-20231024100002-ee7def48f1b3 h1:tAJfEF33TJ7P41QrKtMX2srUtHGNaOs9bZfw88dyGvI=
@@ -97,6 +101,8 @@ github.com/gospider007/requests v0.0.0-20231121021403-c7e857ed37cf h1:FefRQZvvfT
 github.com/gospider007/requests v0.0.0-20231121021403-c7e857ed37cf/go.mod h1:hEiDxPAHuPNKrqwWiSx6YkkWU2mOVXAy8zXeWz3FrFM=
 github.com/gospider007/requests v0.0.0-20231201075721-36a4432d7123 h1:Zu900gVx5tXr+uicfDOS4gfqiYaA4dYUuEgJq+60wKc=
 github.com/gospider007/requests v0.0.0-20231201075721-36a4432d7123/go.mod h1:1bfYv9wmzzUumCxLxY9DWU2EWYaXy9f29UDXI+HmxGQ=
+github.com/gospider007/requests v0.0.0-20231208053000-42df54895867 h1:AVRj9IFu+YMBsp1M2E8LXF9TZmpaVpeO1IHn8pnc2y0=
+github.com/gospider007/requests v0.0.0-20231208053000-42df54895867/go.mod h1:M+umKtwqJ/eT4+ODJFLE3cMalZGelQySqfGyvxJimC8=
 github.com/gospider007/tools v0.0.0-20231024115950-be51fa815fcd h1:UH2D7tgAmzr9gbtuC46L5bggrDw1/MXq/1YYdN2l+kA=
 github.com/gospider007/tools v0.0.0-20231024115950-be51fa815fcd/go.mod h1:U7MVsYWYQPXIOfXja0g/OK7rG67QIRypXfD+VPsQeiw=
 github.com/gospider007/tools v0.0.0-20231104124710-69ac32876ccc h1:29s54Z07h4MVTbZTLKRqypFRXbD4oQK5PhGUttaa2qY=
@@ -109,6 +115,8 @@ github.com/gospider007/tools v0.0.0-20231120122411-d631cc2fc371 h1:wF5pm7gilDuDK
 github.com/gospider007/tools v0.0.0-20231120122411-d631cc2fc371/go.mod h1:myK4kDqDx4TlplDVnfYMI7Xi5VUbFZ3fxwAh2Cwm7ks=
 github.com/gospider007/tools v0.0.0-20231201075443-f0a4bc8cd616 h1:Ix8hbbbaIX9REGs0qqU1b48L3BlleDyNkCPdv297LF8=
 github.com/gospider007/tools v0.0.0-20231201075443-f0a4bc8cd616/go.mod h1:wiILK6EotceHz/Rnb6ux8PzY3sr5OV+mYuIcbtxpkYI=
+github.com/gospider007/tools v0.0.0-20231202084937-8b2bc66f8198 h1:phk1GNobIIQWL5/G5dtgs35hotucdYv2FScMjlHHZ+Q=
+github.com/gospider007/tools v0.0.0-20231202084937-8b2bc66f8198/go.mod h1:wiILK6EotceHz/Rnb6ux8PzY3sr5OV+mYuIcbtxpkYI=
 github.com/gospider007/websocket v0.0.0-20231024120029-ac3d4bf72f42 h1:WeR+cv6ru53SkOt/+O7urqK5L/dLIEtTERoM9BqWjqs=
 github.com/gospider007/websocket v0.0.0-20231024120029-ac3d4bf72f42/go.mod h1:xkiuV/YXMM0ljUWU5ikm5u9e1ssmNia8mk2Fnzg6ux0=
 github.com/gospider007/websocket v0.0.0-20231102021107-d34612e770bd h1:6kmXEifLgDwUtT9D/MUns8kcm81vnBw7FQvQ2vcf/Jc=
@@ -126,6 +134,8 @@ github.com/klauspost/compress v1.17.2 h1:RlWWUY/Dr4fL8qk9YG7DTZ7PDgME2V4csBXA8L/
 github.com/klauspost/compress v1.17.2/go.mod h1:ntbaceVETuRiXiv4DpjP66DpAtAGkEQskQzEyD//IeE=
 github.com/klauspost/compress v1.17.3 h1:qkRjuerhUU1EmXLYGkSH6EZL+vPSxIrYjLNAK4slzwA=
 github.com/klauspost/compress v1.17.3/go.mod h1:/dCuZOvVtNoHsyb+cuJD3itjs3NbnF6KH9zAO4BDxPM=
+github.com/klauspost/compress v1.17.4 h1:Ej5ixsIri7BrIjBkRZLTo6ghwrEtHFk7ijlczPW4fZ4=
+github.com/klauspost/compress v1.17.4/go.mod h1:/dCuZOvVtNoHsyb+cuJD3itjs3NbnF6KH9zAO4BDxPM=
 github.com/klauspost/cpuid/v2 v2.0.12/go.mod h1:g2LTdtYhdyuGPqyWyv7qRAmj1WBqxuObKfj5c0PQa7c=
 github.com/klauspost/cpuid/v2 v2.2.5 h1:0E5MSMDEoAulmXNFquVs//DdoomxaoTY1kUhbc/qbZg=
 github.com/klauspost/cpuid/v2 v2.2.5/go.mod h1:Lcz8mBdAVJIBVzewtcLocK12l3Y+JytZYpaMropDUws=
@@ -183,6 +193,8 @@ go.mongodb.org/mongo-driver v1.12.1 h1:nLkghSU8fQNaK7oUmDhQFsnrtcoNy7Z6LVFKsEecq
 go.mongodb.org/mongo-driver v1.12.1/go.mod h1:/rGBTebI3XYboVmgz+Wv3Bcbl3aD0QF9zl6kDDw18rQ=
 go.mongodb.org/mongo-driver v1.13.0 h1:67DgFFjYOCMWdtTEmKFpV3ffWlFnh+CYZ8ZS/tXWUfY=
 go.mongodb.org/mongo-driver v1.13.0/go.mod h1:/rGBTebI3XYboVmgz+Wv3Bcbl3aD0QF9zl6kDDw18rQ=
+go.mongodb.org/mongo-driver v1.13.1 h1:YIc7HTYsKndGK4RFzJ3covLz1byri52x0IoMB0Pt/vk=
+go.mongodb.org/mongo-driver v1.13.1/go.mod h1:wcDf1JBCXy2mOW0bWHwO/IOYqdca1MPCwDtFu/Z9+eo=
 go.uber.org/goleak v1.2.0 h1:xqgm/S+aQvhWFTtR0XK3Jvg7z8kGV8P4X14IzwN3Eqk=
 go.uber.org/goleak v1.2.0/go.mod h1:XJYK+MuIchqpmGmUSAzotztawfKvYLUIgg7guXrwVUo=
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
@@ -206,6 +218,8 @@ golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa h1:FRnLl4eNAQl8hwxVVC17teOw8
 golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa/go.mod h1:zk2irFbV9DP96SEBUUAy67IdHUaZuSnrz1n472HUCLE=
 golang.org/x/exp v0.0.0-20231127185646-65229373498e h1:Gvh4YaCaXNs6dKTlfgismwWZKyjVZXwOPfIyUaqU3No=
 golang.org/x/exp v0.0.0-20231127185646-65229373498e/go.mod h1:iRJReGqOEeBhDZGkGbynYwcHlctCvnjTYIamk7uXpHI=
+golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb h1:c0vyKkb6yr3KR7jEfJaOSv4lG7xPkbN6r52aJz1d8a8=
+golang.org/x/exp v0.0.0-20231206192017-f3f8817b8deb/go.mod h1:iRJReGqOEeBhDZGkGbynYwcHlctCvnjTYIamk7uXpHI=
 golang.org/x/image v0.13.0 h1:3cge/F/QTkNLauhf2QoE9zp+7sr+ZcL4HnoZmdwg9sg=
 golang.org/x/image v0.13.0/go.mod h1:6mmbMOeV28HuMTgA6OSRkdXKYw/t5W9Uwn2Yv1r3Yxk=
 golang.org/x/image v0.14.0 h1:tNgSxAFe3jC4uYqvZdTr84SZoM1KfwdC9SKIFrLjFn4=

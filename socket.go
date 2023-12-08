@@ -101,8 +101,8 @@ func (obj *Client) udpHandle(ctx context.Context, client *ProxyConn) error {
 		defer listenr.Close()
 		done := make(chan struct{})
 		go func() {
-			defer close(done)
 			err = obj.udpMain(listenr)
+			close(done)
 		}()
 		select {
 		case <-ctx.Done():
