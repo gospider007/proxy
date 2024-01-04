@@ -3,15 +3,15 @@ module github.com/gospider007/proxy
 go 1.21.3
 
 require (
-	github.com/gospider007/gtls v0.0.0-20231215082710-ea089e961bcc
-	github.com/gospider007/ja3 v0.0.0-20231215081451-4f0f2494ca9f
+	github.com/gospider007/gtls v0.0.0-20240104034426-5073ca328e04
+	github.com/gospider007/ja3 v0.0.0-20240104034350-073c71b66be1
 	github.com/gospider007/kinds v0.0.0-20231024093643-7a4424f2d30e
-	github.com/gospider007/net v0.0.0-20231215081728-064725ce355a
-	github.com/gospider007/requests v0.0.0-20231215082641-355c5cea52b4
+	github.com/gospider007/net v0.0.0-20240104034506-5448a8a979e3
+	github.com/gospider007/requests v0.0.0-20240104034739-a6067ae93e87
 	github.com/gospider007/tools v0.0.0-20231202084937-8b2bc66f8198
-	github.com/gospider007/websocket v0.0.0-20231128065110-6296f87425c4
-	github.com/refraction-networking/utls v1.5.4
-	golang.org/x/exp v0.0.0-20231214170342-aacd6d4b4611
+	github.com/gospider007/websocket v0.0.0-20240104034652-af938aeed446
+	github.com/refraction-networking/utls v1.6.0
+	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc
 )
 
 require (
@@ -19,12 +19,11 @@ require (
 	github.com/andybalholm/brotli v1.0.6 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/caddyserver/certmagic v0.20.0 // indirect
-	github.com/cloudflare/circl v1.3.6 // indirect
-	github.com/gaukas/godicttls v0.0.4 // indirect
-	github.com/gospider007/bar v0.0.0-20231201075546-252b6e7b6a54 // indirect
+	github.com/cloudflare/circl v1.3.7 // indirect
+	github.com/gospider007/bar v0.0.0-20231215084215-956cfa59ce61 // indirect
 	github.com/gospider007/blog v0.0.0-20231121084103-59a004dafccf // indirect
-	github.com/gospider007/bs4 v0.0.0-20231123090151-001db0b91941 // indirect
-	github.com/gospider007/gson v0.0.0-20231119141525-66095080057d // indirect
+	github.com/gospider007/bs4 v0.0.0-20240101025928-00848c76b4c5 // indirect
+	github.com/gospider007/gson v0.0.0-20231215083934-e7762897c4db // indirect
 	github.com/gospider007/re v0.0.0-20231024115818-adfd03636256 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.4 // indirect
@@ -42,7 +41,7 @@ require (
 	go.mongodb.org/mongo-driver v1.13.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
-	golang.org/x/crypto v0.16.0 // indirect
+	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/image v0.14.0 // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.19.0 // indirect
