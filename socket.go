@@ -171,7 +171,7 @@ func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
 	if err != nil {
 		return err
 	}
-	server := newProxyCon(ctx, proxyServer, bufio.NewReader(proxyServer), *client.option, false)
+	server := newProxyCon(proxyServer, bufio.NewReader(proxyServer), *client.option, false)
 	client.option.port = port
 	client.option.host = host
 

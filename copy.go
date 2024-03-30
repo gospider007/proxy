@@ -19,13 +19,13 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-func (obj *Client) wsSend(ctx context.Context, wsClient *websocket.Conn, wsServer *websocket.Conn) (err error) {
+func (obj *Client) wsSend(wsClient *websocket.Conn, wsServer *websocket.Conn) (err error) {
 	defer wsServer.Close()
 	defer wsClient.Close()
 	var msgType websocket.MessageType
 	var msgData []byte
 	for {
-		if msgType, msgData, err = wsClient.Recv(ctx); err != nil {
+		if msgType, msgData, err = wsClient.ReadMessage(); err != nil {
 			return
 		}
 		if obj.wsCallBack != nil {
@@ -33,18 +33,18 @@ func (obj *Client) wsSend(ctx context.Context, wsClient *websocket.Conn, wsServe
 				return err
 			}
 		}
-		if err = wsServer.Send(ctx, msgType, msgData); err != nil {
+		if err = wsServer.WriteMessage(msgType, msgData); err != nil {
 			return
 		}
 	}
 }
-func (obj *Client) wsRecv(ctx context.Context, wsClient *websocket.Conn, wsServer *websocket.Conn) (err error) {
+func (obj *Client) wsRecv(wsClient *websocket.Conn, wsServer *websocket.Conn) (err error) {
 	defer wsServer.Close()
 	defer wsClient.Close()
 	var msgType websocket.MessageType
 	var msgData []byte
 	for {
-		if msgType, msgData, err = wsServer.Recv(ctx); err != nil {
+		if msgType, msgData, err = wsServer.ReadMessage(); err != nil {
 			return
 		}
 		if obj.wsCallBack != nil {
@@ -52,14 +52,10 @@ func (obj *Client) wsRecv(ctx context.Context, wsClient *websocket.Conn, wsServe
 				return err
 			}
 		}
-		if err = wsClient.Send(ctx, msgType, msgData); err != nil {
+		if err = wsClient.WriteMessage(msgType, msgData); err != nil {
 			return
 		}
 	}
-}
-
-type erringRoundTripper interface {
-	RoundTripErr() error
 }
 
 func (obj *Client) TlsConfig() *tls.Config {
@@ -274,12 +270,12 @@ func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *
 		return tools.CopyWitchContext(ctx, server, client)
 	}
 	//ws 开始回调
-	wsClient := websocket.NewConn(client, false, client.option.wsOption)
-	wsServer := websocket.NewConn(server, true, server.option.wsOption)
+	wsClient := websocket.NewClientConn(client, client.option.wsOption)
+	wsServer := websocket.NewServerConn(server, server.option.wsOption)
 	defer wsServer.Close()
 	defer wsClient.Close()
-	go obj.wsRecv(ctx, wsClient, wsServer)
-	return obj.wsSend(ctx, wsClient, wsServer)
+	go obj.wsRecv(wsClient, wsServer)
+	return obj.wsSend(wsClient, wsServer)
 }
 func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
 	httpsBytes, err := client.reader.Peek(1)
@@ -298,7 +294,7 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 			if err != nil {
 				return err
 			}
-			server = newProxyCon(ctx, tlsServer, bufio.NewReader(tlsServer), *server.option, false)
+			server = newProxyCon(tlsServer, bufio.NewReader(tlsServer), *server.option, false)
 			server.option.http2 = negotiatedProtocol == "h2"
 		}
 		return obj.copyHttpMain(ctx, client, server)
@@ -348,8 +344,8 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 	client.option.http2 = tlsClient.ConnectionState().NegotiatedProtocol == "h2"
 
 	//重新包装连接
-	clientProxy := newProxyCon(ctx, tlsClient, bufio.NewReader(tlsClient), *client.option, true)
-	serverProxy := newProxyCon(ctx, tlsServer, bufio.NewReader(tlsServer), *server.option, false)
+	clientProxy := newProxyCon(tlsClient, bufio.NewReader(tlsClient), *client.option, true)
+	serverProxy := newProxyCon(tlsServer, bufio.NewReader(tlsServer), *server.option, false)
 	return obj.copyHttpMain(ctx, clientProxy, serverProxy)
 }
 func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, nextProtos []string, ja3Spec ja3.Ja3Spec) (net.Conn, []*x509.Certificate, string, error) {

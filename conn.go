@@ -34,7 +34,7 @@ type ProxyConn struct {
 	option *ProxyOption
 }
 
-func newProxyCon(preCtx context.Context, conn net.Conn, reader *bufio.Reader, option ProxyOption, client bool) *ProxyConn {
+func newProxyCon(conn net.Conn, reader *bufio.Reader, option ProxyOption, client bool) *ProxyConn {
 	return &ProxyConn{conn: conn, reader: reader, option: &option, client: client}
 }
 func (obj *ProxyConn) Read(b []byte) (int, error) {
@@ -85,7 +85,7 @@ func (obj *ProxyConn) readResponse(req *http.Request) (*http.Response, error) {
 	}
 	if response.StatusCode == 101 && response.Header.Get("Upgrade") == "websocket" {
 		obj.option.isWs = true
-		obj.option.wsOption = websocket.GetHeaderOption(response.Header, false)
+		obj.option.wsOption = websocket.GetResponseHeaderOption(response.Header)
 	}
 	return response, err
 }
@@ -122,7 +122,7 @@ func (obj *ProxyConn) readRequest(ctx context.Context, requestCallBack func(*htt
 	obj.option.init = true
 	if clientReq.Header.Get("Upgrade") == "websocket" {
 		obj.option.isWs = true
-		obj.option.wsOption = websocket.GetHeaderOption(clientReq.Header, true)
+		obj.option.wsOption = websocket.GetRequestHeaderOption(clientReq.Header)
 	}
 
 	hostName := clientReq.URL.Hostname()

@@ -313,10 +313,10 @@ func (obj *Client) mainHandle(ctx context.Context, client net.Conn) (err error) 
 	}
 	switch firstCons[0] {
 	case 5: //socks5 代理
-		return obj.sockes5Handle(ctx, newProxyCon(ctx, client, clientReader, ProxyOption{}, true))
+		return obj.sockes5Handle(ctx, newProxyCon(client, clientReader, ProxyOption{}, true))
 	case 22: //https 代理
-		return obj.httpsHandle(ctx, newProxyCon(ctx, client, clientReader, ProxyOption{}, true))
+		return obj.httpsHandle(ctx, newProxyCon(client, clientReader, ProxyOption{}, true))
 	default: //http 代理
-		return obj.httpHandle(ctx, newProxyCon(ctx, client, clientReader, ProxyOption{}, true))
+		return obj.httpHandle(ctx, newProxyCon(client, clientReader, ProxyOption{}, true))
 	}
 }

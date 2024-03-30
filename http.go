@@ -35,7 +35,7 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 	if proxyServer, err = obj.dialer.DialContextWithProxy(ctx, requests.GetReqCtxData(ctx), "tcp", client.option.schema, addr, host, proxyUrl, obj.TlsConfig()); err != nil {
 		return err
 	}
-	server := newProxyCon(ctx, proxyServer, bufio.NewReader(proxyServer), *client.option, false)
+	server := newProxyCon(proxyServer, bufio.NewReader(proxyServer), *client.option, false)
 	defer server.Close()
 	if client.option.schema == "https" {
 		if obj.createSpecWithHttp != nil {
@@ -71,5 +71,5 @@ func (obj *Client) httpsHandle(ctx context.Context, client *ProxyConn) error {
 	if err := tlsClient.HandshakeContext(ctx); err != nil {
 		return err
 	}
-	return obj.httpHandle(ctx, newProxyCon(ctx, tlsClient, bufio.NewReader(tlsClient), *client.option, true))
+	return obj.httpHandle(ctx, newProxyCon(tlsClient, bufio.NewReader(tlsClient), *client.option, true))
 }
