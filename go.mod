@@ -4,7 +4,7 @@ go 1.21.3
 
 require (
 	github.com/gospider007/gtls v0.0.0-20240104034426-5073ca328e04
-	github.com/gospider007/ja3 v0.0.0-20240414110751-1b472ec50e92
+	github.com/gospider007/ja3 v0.0.0-20240416033442-0049752596ae
 	github.com/gospider007/kinds v0.0.0-20231024093643-7a4424f2d30e
 	github.com/gospider007/net v0.0.0-20240414111018-b6269c96a78a
 	github.com/gospider007/requests v0.0.0-20240414133338-d910942e5739

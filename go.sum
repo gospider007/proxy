@@ -28,6 +28,8 @@ github.com/gospider007/gtls v0.0.0-20240104034426-5073ca328e04 h1:iAmk4YVKoOllDO
 github.com/gospider007/gtls v0.0.0-20240104034426-5073ca328e04/go.mod h1:3yfOTfRE03+Itp1M+paIy+AJVVpoTFyRyqJboTNLrSg=
 github.com/gospider007/ja3 v0.0.0-20240414110751-1b472ec50e92 h1:iQvWY1/9s9zjxheKoQdAe5RBo2Mxf79QB/UaZt4jxQo=
 github.com/gospider007/ja3 v0.0.0-20240414110751-1b472ec50e92/go.mod h1:174oisiluuSkOdZgEjC06o3Brx0GoUuVC91v09sFp7I=
+github.com/gospider007/ja3 v0.0.0-20240416033442-0049752596ae h1:Rcnjhlo5Pkb+B13kEPm+XYEYLBfT5ouJ35psjDpYlOk=
+github.com/gospider007/ja3 v0.0.0-20240416033442-0049752596ae/go.mod h1:174oisiluuSkOdZgEjC06o3Brx0GoUuVC91v09sFp7I=
 github.com/gospider007/kinds v0.0.0-20231024093643-7a4424f2d30e h1:lmX6IQKkrNDbXfHsvrv1Uz0MoG2v5+4VC6Gdh9irUNY=
 github.com/gospider007/kinds v0.0.0-20231024093643-7a4424f2d30e/go.mod h1:nB4OMmd8Ji92yEmgjbHcqLcBHTAhSSmlGNb2JpTYK9A=
 github.com/gospider007/net v0.0.0-20240414111018-b6269c96a78a h1:jqjiZ/M5NtlfmkzFPYq3dzIjcJ67GNbjiYDt1OeJJq8=
