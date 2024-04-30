@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"net"
+	"slices"
 
 	"net/http"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/gospider007/tools"
 	"github.com/gospider007/websocket"
 	utls "github.com/refraction-networking/utls"
-	"golang.org/x/exp/slices"
 )
 
 func (obj *Client) wsSend(wsClient *websocket.Conn, wsServer *websocket.Conn) (err error) {
