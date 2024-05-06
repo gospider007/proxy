@@ -4,13 +4,13 @@ go 1.21.3
 
 require (
 	github.com/gospider007/gtls v0.0.0-20240104034426-5073ca328e04
-	github.com/gospider007/ja3 v0.0.0-20240430034715-7cdc877a8bb4
+	github.com/gospider007/ja3 v0.0.0-20240501035452-cf16a59548ef
 	github.com/gospider007/kinds v0.0.0-20231024093643-7a4424f2d30e
 	github.com/gospider007/net v0.0.0-20240414111018-b6269c96a78a
-	github.com/gospider007/requests v0.0.0-20240430034800-b342e3184912
-	github.com/gospider007/tools v0.0.0-20231202084937-8b2bc66f8198
+	github.com/gospider007/requests v0.0.0-20240506025355-c73d46169a23
+	github.com/gospider007/tools v0.0.0-20240506025307-b6a12cb9b897
 	github.com/gospider007/websocket v0.0.0-20240331132617-8217ca7a8439
-	github.com/refraction-networking/utls v1.6.4
+	github.com/refraction-networking/utls v1.6.6
 )
 
 require (
@@ -41,11 +41,11 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/exp v0.0.0-20240416160154-fe59bbe5cc7f // indirect
-	golang.org/x/image v0.15.0 // indirect
+	golang.org/x/image v0.16.0 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/tools v0.20.0 // indirect
 )

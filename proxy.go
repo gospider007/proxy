@@ -286,12 +286,16 @@ func (obj *Client) verifyPwd(client net.Conn, clientReq *http.Request) error {
 	if obj.whiteVerify(client) {
 		return nil
 	}
-	client.Write([]byte(fmt.Sprintf("%s 407 Authentication Required\r\nAuthenticate: Basic\r\n\r\n", clientReq.Proto)))
+	_, err := client.Write([]byte(fmt.Sprintf("%s 407 Authentication Required\r\nProxy-Authenticate: Basic\r\n\r\n", clientReq.Proto)))
+	if err != nil {
+		return err
+	}
 	return errors.New("auth verify fail")
 }
 
 func (obj *Client) mainHandle(ctx context.Context, client net.Conn) (err error) {
 	defer recover()
+	defer client.Close()
 	if obj.debug {
 		defer func() {
 			if err != nil {
@@ -302,7 +306,6 @@ func (obj *Client) mainHandle(ctx context.Context, client net.Conn) (err error) 
 	if client == nil {
 		return errors.New("client is nil")
 	}
-	defer client.Close()
 	if obj.basic == "" && !obj.whiteVerify(client) {
 		return errors.New("auth verify false")
 	}
