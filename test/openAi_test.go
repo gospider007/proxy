@@ -28,19 +28,21 @@ func openaiProxy() {
 
 	proxyFlag := flag.String("proxy", "", "代理地址")
 	domainFlag := flag.String("domain", "", "域名")
-	emailFlag := flag.String("email", "", "邮箱")
 	flag.Parse()
 	if *usrFlag != "" || *pwdFlag != "" || *pwdFlag == "" || *openaiKeyFlag == "" {
 		log.Print("参数错误：\n -h 查看命令行参数")
 		os.Exit(0)
 	}
+	var domainNames []string
+	if *domainFlag != "" {
+		domainNames = []string{*domainFlag}
+	}
 	proxyCli, err := proxy.NewClient(nil, proxy.ClientOption{
-		Addr:       *addrFlag,
-		Usr:        *usrFlag,
-		Pwd:        *pwdFlag,
-		Proxy:      *proxyFlag,
-		AcmeDomain: *domainFlag,
-		AcmeEmail:  *emailFlag,
+		Addr:        *addrFlag,
+		Usr:         *usrFlag,
+		Pwd:         *pwdFlag,
+		Proxy:       *proxyFlag,
+		DomainNames: domainNames,
 		HttpConnectCallBack: func(r *http.Request) error {
 			changeReq(r, *openaiKeyFlag)
 			return nil

@@ -25,14 +25,13 @@ import (
 )
 
 type ClientOption struct {
-	Usr        string   //用户名
-	Pwd        string   //密码
-	IpWhite    []net.IP //白名单 192.168.1.1,192.168.1.2
-	Addr       string
-	CrtFile    []byte //公钥,根证书
-	KeyFile    []byte //私钥
-	AcmeDomain string
-	AcmeEmail  string
+	Usr         string   //用户名
+	Pwd         string   //密码
+	IpWhite     []net.IP //白名单 192.168.1.1,192.168.1.2
+	Addr        string
+	CrtFile     []byte //公钥,根证书
+	KeyFile     []byte //私钥
+	DomainNames []string
 
 	GetProxy func(ctx context.Context, url *url.URL) (string, error) //代理ip http://116.62.55.139:8888
 	Proxy    string                                                  //代理ip http://192.168.1.50:8888
@@ -193,12 +192,11 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		server.proxyTlsConfig.Certificates = []tls.Certificate{server.cert}
 		server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
 	} else {
-		if option.AcmeDomain != "" && option.AcmeEmail != "" {
-			if acme, err := gtls.CreateAcme(option.AcmeDomain, option.AcmeEmail); err != nil {
+		if option.DomainNames != nil {
+			if server.proxyTlsConfig, err = gtls.TLS(option.DomainNames); err != nil {
 				return nil, err
-			} else {
-				server.proxyTlsConfig = acme.TLSConfig([]string{"http/1.1"})
 			}
+			server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
 		} else {
 			server.proxyTlsConfig.Certificates = []tls.Certificate{server.cert}
 			server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
