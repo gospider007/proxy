@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/gospider007/ja3"
-	"github.com/gospider007/requests"
 	"github.com/gospider007/websocket"
 )
 
@@ -95,7 +94,7 @@ func (obj *ProxyConn) readRequest(ctx context.Context, requestCallBack func(*htt
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		clientReq, err = requests.ReadRequest(obj.reader)
+		clientReq, err = http.ReadRequest(obj.reader)
 	}()
 	select {
 	case <-ctx.Done():
@@ -128,7 +127,7 @@ func (obj *ProxyConn) readRequest(ctx context.Context, requestCallBack func(*htt
 	hostName := clientReq.URL.Hostname()
 	obj.option.method = clientReq.Method
 	if obj.option.host == "" {
-		if headHost := clientReq.Header.Get("Host"); headHost != "" {
+		if headHost := clientReq.Host; headHost != "" {
 			obj.option.host = headHost
 		} else if clientReq.Host != "" {
 			obj.option.host = clientReq.Host
