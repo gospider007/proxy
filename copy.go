@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"log"
 	"net"
 	"slices"
 
@@ -19,40 +20,28 @@ import (
 	utls "github.com/refraction-networking/utls"
 )
 
-func (obj *Client) wsSend(wsClient *websocket.Conn, wsServer *websocket.Conn) (err error) {
-	defer wsServer.Close()
-	defer wsClient.Close()
+func (obj *Client) wsCopy(wsWriter *websocket.Conn, wsReader *websocket.Conn) (err error) {
+	defer wsWriter.Close()
+	defer wsReader.Close()
 	var msgType websocket.MessageType
 	var msgData []byte
 	for {
-		if msgType, msgData, err = wsClient.ReadMessage(); err != nil {
+		if msgType, msgData, err = wsReader.ReadMessage(); err != nil {
 			return
 		}
 		if obj.wsCallBack != nil {
-			if err = obj.wsCallBack(msgType, msgData, Send); err != nil {
-				return err
+			if wsReader.IsServer {
+				if err = obj.wsCallBack(msgType, msgData, Recv); err != nil {
+					return err
+				}
+			} else {
+				if err = obj.wsCallBack(msgType, msgData, Send); err != nil {
+					return err
+				}
 			}
 		}
-		if err = wsServer.WriteMessage(msgType, msgData); err != nil {
-			return
-		}
-	}
-}
-func (obj *Client) wsRecv(wsClient *websocket.Conn, wsServer *websocket.Conn) (err error) {
-	defer wsServer.Close()
-	defer wsClient.Close()
-	var msgType websocket.MessageType
-	var msgData []byte
-	for {
-		if msgType, msgData, err = wsServer.ReadMessage(); err != nil {
-			return
-		}
-		if obj.wsCallBack != nil {
-			if err = obj.wsCallBack(msgType, msgData, Recv); err != nil {
-				return err
-			}
-		}
-		if err = wsClient.WriteMessage(msgType, msgData); err != nil {
+		if err = wsWriter.WriteMessage(msgType, msgData); err != nil {
+			log.Print(err, "  == 222")
 			return
 		}
 	}
@@ -174,8 +163,6 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 	}
 }
 func (obj *Client) http11Copy(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
-	defer client.Close()
-	defer server.Close()
 	var req *http.Request
 	var rsp *http.Response
 	for {
@@ -270,12 +257,10 @@ func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *
 		return tools.CopyWitchContext(ctx, server, client)
 	}
 	//ws 开始回调
-	wsClient := websocket.NewClientConn(client, client.option.wsOption)
-	wsServer := websocket.NewServerConn(server, server.option.wsOption)
-	defer wsServer.Close()
-	defer wsClient.Close()
-	go obj.wsRecv(wsClient, wsServer)
-	return obj.wsSend(wsClient, wsServer)
+	wsServer := websocket.NewClientConn(server, server.option.wsOption)
+	wsClient := websocket.NewServerConn(client, server.option.wsOption)
+	// go obj.wsCopy(wsClient, wsServer)
+	return obj.wsCopy(wsServer, wsClient)
 }
 func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
 	httpsBytes, err := client.reader.Peek(1)

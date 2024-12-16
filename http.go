@@ -32,12 +32,17 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 	var proxyServer net.Conn
 	host := clientReq.Host
 	addr := net.JoinHostPort(clientReq.URL.Hostname(), clientReq.URL.Port())
-	if proxyServer, err = obj.dialer.DialContextWithProxy(ctx,
-		requests.GetReqCtxData(ctx), "tcp",
-		client.option.schema, addr, host, proxyUrl,
-		obj.TlsConfig(),
-	); err != nil {
-		return err
+	if proxyUrl != nil {
+		remoteUrl := *clientReq.URL
+		remoteUrl.Scheme = client.option.schema
+		remoteUrl.Host = host
+		if proxyServer, err = obj.dialer.DialProxyContext(ctx, requests.GetRequestOption(ctx), "tcp", obj.TlsConfig(), proxyUrl, &remoteUrl); err != nil {
+			return err
+		}
+	} else {
+		if proxyServer, err = obj.dialer.DialContext(ctx, requests.GetRequestOption(ctx), "tcp", addr); err != nil {
+			return err
+		}
 	}
 	server := newProxyCon(proxyServer, bufio.NewReader(proxyServer), *client.option, false)
 	defer server.Close()

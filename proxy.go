@@ -110,12 +110,6 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	if pre_ctx == nil {
 		pre_ctx = context.TODO()
 	}
-	ctxData, err := requests.NewReqCtxData(pre_ctx, &requests.RequestOption{})
-	if err != nil {
-		return nil, err
-	}
-	pre_ctx = requests.CreateReqCtx(pre_ctx, ctxData)
-
 	if option.TlsConfig == nil {
 		option.TlsConfig = &tls.Config{
 			InsecureSkipVerify: true,
@@ -156,6 +150,7 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	if option.Addr == "" {
 		option.Addr = ":0"
 	}
+	var err error
 	if option.Proxy != "" {
 		if server.proxy, err = gtls.VerifyProxy(option.Proxy); err != nil {
 			return nil, err
@@ -236,7 +231,7 @@ func (obj *Client) Run() error {
 	for {
 		select {
 		case <-obj.ctx.Done():
-			obj.err = obj.ctx.Err()
+			obj.err = context.Cause(obj.ctx)
 			return obj.err
 		default:
 			client, err := obj.listener.Accept() //接受数据

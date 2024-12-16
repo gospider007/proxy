@@ -106,7 +106,7 @@ func (obj *Client) udpHandle(ctx context.Context, client *ProxyConn) error {
 		}()
 		select {
 		case <-ctx.Done():
-			err = ctx.Err()
+			err = context.Cause(ctx)
 		case <-done:
 		}
 	}()
@@ -167,7 +167,14 @@ func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
 		client.option.method = http.MethodConnect
 	}
 	netword := "tcp"
-	proxyServer, err := obj.dialer.DialContextWithProxy(ctx, requests.GetReqCtxData(ctx), netword, client.option.schema, addr, host, proxyUrl, obj.TlsConfig())
+	var proxyServer net.Conn
+	if proxyUrl != nil {
+		pu.Host = host
+		pu.Scheme = client.option.schema
+		proxyServer, err = obj.dialer.DialProxyContext(ctx, requests.GetRequestOption(ctx), netword, obj.TlsConfig(), proxyUrl, pu)
+	} else {
+		proxyServer, err = obj.dialer.DialContext(ctx, requests.GetRequestOption(ctx), netword, addr)
+	}
 	if err != nil {
 		return err
 	}

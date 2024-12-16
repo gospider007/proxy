@@ -82,7 +82,7 @@ func (obj *ProxyConn) readResponse(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	if response.StatusCode == 101 && response.Header.Get("Upgrade") == "websocket" {
+	if response.StatusCode == 101 && response.Header.Get("Upgrade") == "WebSocket" {
 		obj.option.isWs = true
 		obj.option.wsOption = websocket.GetResponseHeaderOption(response.Header)
 	}
@@ -98,7 +98,7 @@ func (obj *ProxyConn) readRequest(ctx context.Context, requestCallBack func(*htt
 	}()
 	select {
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return nil, context.Cause(ctx)
 	case <-done:
 	}
 	if err != nil {
@@ -121,7 +121,6 @@ func (obj *ProxyConn) readRequest(ctx context.Context, requestCallBack func(*htt
 	obj.option.init = true
 	if clientReq.Header.Get("Upgrade") == "websocket" {
 		obj.option.isWs = true
-		obj.option.wsOption = websocket.GetRequestHeaderOption(clientReq.Header)
 	}
 
 	hostName := clientReq.URL.Hostname()
