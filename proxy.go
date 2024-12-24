@@ -86,8 +86,8 @@ type Client struct {
 
 	err      error //错误
 	cert     tls.Certificate
-	dialer   *requests.DialClient //连接的Dialer
-	listener net.Listener         //Listener 服务
+	dialer   *requests.Dialer //连接的Dialer
+	listener net.Listener     //Listener 服务
 	basic    string
 	usr      string
 	pwd      string
@@ -168,15 +168,7 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		server.ipWhite.Add(ip_white.String())
 	}
 	//dialer
-	server.dialer = requests.NewDail(requests.DialOption{
-		DialTimeout: option.DialTimeout,
-		KeepAlive:   option.KeepAlive,
-		LocalAddr:   option.LocalAddr,
-
-		GetAddrType: option.GetAddrType,
-		AddrType:    option.AddrType,
-		Dns:         option.Dns,
-	})
+	server.dialer = &requests.Dialer{}
 	//证书
 	server.proxyTlsConfig = new(tls.Config)
 
