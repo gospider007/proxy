@@ -30,13 +30,21 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 		return err
 	}
 	var proxyServer net.Conn
-	host := clientReq.Host
-	addr := net.JoinHostPort(clientReq.URL.Hostname(), clientReq.URL.Port())
+	addr, err := requests.GetAddressWithUrl(clientReq.URL)
+	if err != nil {
+		return err
+	}
 	if proxyUrl != nil {
-		remoteUrl := *clientReq.URL
-		remoteUrl.Scheme = client.option.schema
-		remoteUrl.Host = host
-		if proxyServer, err = obj.dialer.DialProxyContext(ctx, requests.GetRequestOption(ctx), "tcp", obj.TlsConfig(), proxyUrl, &remoteUrl); err != nil {
+		proxyAddress, err := requests.GetAddressWithUrl(proxyUrl)
+		if err != nil {
+			return err
+		}
+		remoteAddress, err := requests.GetAddressWithUrl(clientReq.URL)
+		if err != nil {
+			return err
+		}
+		remoteAddress.Scheme = client.option.schema
+		if proxyServer, err = obj.dialer.DialProxyContext(ctx, requests.GetRequestOption(ctx), "tcp", obj.TlsConfig(), proxyAddress, remoteAddress); err != nil {
 			return err
 		}
 	} else {
@@ -78,6 +86,7 @@ func (obj *Client) httpsHandle(ctx context.Context, client *ProxyConn) error {
 	tlsClient := tls.Server(client, obj.ProxyTlsConfig())
 	defer tlsClient.Close()
 	if err := tlsClient.HandshakeContext(ctx); err != nil {
+
 		return err
 	}
 	return obj.httpHandle(ctx, newProxyCon(tlsClient, bufio.NewReader(tlsClient), *client.option, true))

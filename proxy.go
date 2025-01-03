@@ -10,6 +10,8 @@ import (
 	"log"
 	"net"
 	"net/url"
+	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
@@ -95,7 +97,7 @@ type Client struct {
 	ctx      context.Context
 	cnl      context.CancelFunc
 	host     string
-	port     string
+	port     int
 
 	tlsConfig      *tls.Config
 	proxyTlsConfig *tls.Config
@@ -113,14 +115,12 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	if option.TlsConfig == nil {
 		option.TlsConfig = &tls.Config{
 			InsecureSkipVerify: true,
-			SessionTicketKey:   [32]byte{},
 			ClientSessionCache: tls.NewLRUClientSessionCache(0),
 		}
 	}
 	if option.UtlsConfig == nil {
 		option.UtlsConfig = &utls.Config{
 			InsecureSkipVerify:                 true,
-			SessionTicketKey:                   [32]byte{},
 			ClientSessionCache:                 utls.NewLRUClientSessionCache(0),
 			InsecureSkipTimeVerify:             true,
 			OmitEmptyPsk:                       true,
@@ -179,13 +179,30 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		server.proxyTlsConfig.Certificates = []tls.Certificate{server.cert}
 		server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
 	} else {
+		// if option.DomainNames != nil {
+		// 	if server.proxyTlsConfig, err = gtls.TLS(option.DomainNames); err != nil {
+		// 		return nil, err
+		// 	}
+		// 	server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
+		// } else {
+		// 	cert, err := gtls.CreateProxyCertWithName("gospider")
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// 	server.proxyTlsConfig.Certificates = []tls.Certificate{cert}
+		// 	server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
+		// }
 		if option.DomainNames != nil {
 			if server.proxyTlsConfig, err = gtls.TLS(option.DomainNames); err != nil {
 				return nil, err
 			}
 			server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
 		} else {
-			server.proxyTlsConfig.Certificates = []tls.Certificate{server.cert}
+			cert, err := gtls.CreateProxyCertWithName("gospider")
+			if err != nil {
+				return nil, err
+			}
+			server.proxyTlsConfig.Certificates = []tls.Certificate{cert}
 			server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
 		}
 	}
@@ -193,7 +210,13 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	if server.listener, err = net.Listen("tcp", option.Addr); err != nil {
 		return nil, err
 	}
-	if server.host, server.port, err = net.SplitHostPort(server.listener.Addr().String()); err != nil {
+	h, p, err := net.SplitHostPort(server.listener.Addr().String())
+	if err != nil {
+		return nil, err
+	}
+	server.host = h
+	server.port, err = strconv.Atoi(p)
+	if err != nil {
 		return nil, err
 	}
 	return &server, nil
@@ -215,7 +238,7 @@ func (obj *Client) GetProxy(ctx context.Context, href *url.URL) (*url.URL, error
 
 // 代理监听的端口
 func (obj *Client) Addr() string {
-	return net.JoinHostPort(obj.host, obj.port)
+	return net.JoinHostPort(obj.host, strconv.Itoa(obj.port))
 }
 
 func (obj *Client) Run() error {
@@ -285,6 +308,7 @@ func (obj *Client) mainHandle(ctx context.Context, client net.Conn) (err error) 
 		defer func() {
 			if err != nil {
 				log.Print("proxy debugger:\n", err)
+				debug.PrintStack()
 			}
 		}()
 	}

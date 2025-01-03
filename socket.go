@@ -4,12 +4,10 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"net"
-	"os"
 	"strconv"
 	"strings"
 
@@ -20,112 +18,89 @@ import (
 	"github.com/gospider007/tools"
 )
 
-func (obj *Client) getUdpData(content []byte) (net.IP, int, []byte, error) {
-	var addr net.IP
-	var dataL int
-	switch content[3] {
-	case 1: //ipv4地址
-		if len(content) < 8 {
-			return addr, 0, nil, errors.New("udp content 长度不对")
-		}
-		addr = net.IPv4(content[4], content[5], content[6], content[7])
-		dataL = 8
-	case 3: //域名
-		return addr, 0, nil, errors.New("udp 不支持域名连接")
-	case 4: //IPv6地址
-		if len(content) < 20 {
-			return addr, 0, nil, errors.New("udp content 长度不对")
-		}
-		addr = net.IP(
-			[]byte{
-				content[4], content[5], content[6], content[7],
-				content[8], content[9], content[10], content[11],
-				content[12], content[13], content[14], content[15],
-				content[16], content[17], content[18], content[19],
-			})
-		dataL = 20
-	default:
-		return addr, 0, nil, errors.New("invalid atyp")
-	}
-	return addr, int(binary.BigEndian.Uint16(content[dataL : dataL+2])), content[dataL+2:], nil
-}
-
-func (obj *Client) udpMain(listenr *net.UDPConn) error {
-	data := make([]byte, 1500)
-	for {
-		n, clientAddr, err := listenr.ReadFromUDP(data) //读取udp 数据
-		if err != nil {
-			return err
-		}
-		remoteAddr, remotePort, remoteData, err := obj.getUdpData(data[:n]) //获取目的ip,目的port,目的数据
-		if err != nil {
-			return err
-		}
-		remoteConn, err := net.DialUDP("udp", nil, &net.UDPAddr{
-			IP:   remoteAddr,
-			Port: remotePort,
-		}) //与目的地建立连接
-		if err != nil {
-			return err
-		}
-		if _, err = remoteConn.Write(remoteData); err != nil { //向目的地发送数据
-			return err
-		}
-		if n, _, err = remoteConn.ReadFromUDP(data); err != nil { //接收目的地的数据
-			return err
-		}
-		if _, err = listenr.WriteToUDP(append([]byte{0, 0, 0, 1, 0, 0, 0, 0, 0, 0}, data[:n]...), clientAddr); err != nil { //向客户端发送接收到的数据
-			return err
-		}
-	}
-}
-func (obj *Client) udpHandle(ctx context.Context, client *ProxyConn) error {
-	listenr, err := net.ListenUDP("udp", &net.UDPAddr{ //监听udp 端口
+func (s *Client) udpMain(client *ProxyConn) error {
+	udpConn, err := net.ListenUDP("udp", &net.UDPAddr{ //监听udp 端口
 		IP: net.IPv4(0, 0, 0, 0),
 	})
 	if err != nil {
 		return err
 	}
-	defer client.Close()
-	defer listenr.Close()
-	_, portStr, err := net.SplitHostPort(listenr.LocalAddr().String()) //获取本地监听的端口
+	defer udpConn.Close()
+	ip, port := client.LocalAddr().(*net.TCPAddr).IP, udpConn.LocalAddr().(*net.UDPAddr).Port
+	_, err = client.Write([]byte{0x05, 0x00, 0})
 	if err != nil {
 		return err
 	}
-	port, err := strconv.Atoi(portStr)
+	err = requests.WriteUdpAddr(client, requests.Address{IP: ip, Port: port, NetWork: "udp"})
 	if err != nil {
 		return err
 	}
+
 	go func() {
-		defer client.Close()
-		defer listenr.Close()
-		done := make(chan struct{})
-		go func() {
-			err = obj.udpMain(listenr)
-			close(done)
-		}()
-		select {
-		case <-ctx.Done():
-			err = context.Cause(ctx)
-		case <-done:
+		var buf [1]byte
+		for {
+			_, err := client.reader.Read(buf[:])
+			if err != nil {
+				udpConn.Close()
+				break
+			}
 		}
 	}()
-	writeData := append([]byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00}, byte(port>>8), byte(port)) //通知客户端远程端口的数据
+	var (
+		sourceAddr  net.Addr
+		targetAddr  *net.UDPAddr
+		replyPrefix []byte
+		buf         [requests.MaxUdpPacket]byte
+	)
 	for {
-		if _, err = client.Write(writeData); err != nil {
+		n, gotAddr, err := udpConn.ReadFrom(buf[:])
+		if err != nil {
 			return err
 		}
-		if _, _, err = obj.getSocketAddr(client); err != nil {
-			if errors.Is(err, os.ErrDeadlineExceeded) {
-				if err = client.SetDefaultDeadline(); err != nil {
+		if sourceAddr == nil {
+			sourceAddr = gotAddr
+		}
+		if sourceAddr.String() == gotAddr.String() {
+			if n < 3 {
+				continue
+			}
+			reader := bytes.NewBuffer(buf[3:n])
+			addr, err := requests.ReadUdpAddr(reader)
+			if err != nil {
+				continue
+			}
+			if targetAddr == nil {
+				targetAddr = &net.UDPAddr{
+					IP:   addr.IP,
+					Port: addr.Port,
+				}
+			}
+			if addr.String() != targetAddr.String() {
+				continue
+			}
+			_, err = udpConn.WriteTo(reader.Bytes(), targetAddr)
+			if err != nil {
+				return err
+			}
+		} else if targetAddr != nil && targetAddr.String() == gotAddr.String() {
+			if replyPrefix == nil {
+				b := bytes.NewBuffer(make([]byte, 3, 16))
+				err = requests.WriteUdpAddr(b, requests.Address{IP: targetAddr.IP, Port: targetAddr.Port, NetWork: "udp"})
+				if err != nil {
 					return err
 				}
-			} else {
+				replyPrefix = b.Bytes()
+			}
+			copy(buf[len(replyPrefix):len(replyPrefix)+n], buf[:n])
+			copy(buf[:len(replyPrefix)], replyPrefix)
+			_, err = udpConn.WriteTo(buf[:len(replyPrefix)+n], sourceAddr)
+			if err != nil {
 				return err
 			}
 		}
 	}
 }
+
 func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
 	defer client.Close()
 	var err error
@@ -133,24 +108,25 @@ func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
 		return err
 	}
 	//获取serverAddr
-	ctyp, addr, err := obj.getSocketAddr(client)
+	cmd, err := obj.getCmd(client)
 	if err != nil {
 		return err
 	}
-	if ctyp == "udp" {
-		return obj.udpHandle(ctx, client)
-	}
-	//获取host
-	host, port, err := net.SplitHostPort(addr)
+	remoteAddress, err := requests.ReadUdpAddr(client.reader)
 	if err != nil {
 		return err
 	}
-	if strings.HasPrefix(addr, "127.0.0.1") || strings.HasPrefix(addr, "localhost") {
-		if port == obj.port {
+	if cmd == 3 {
+		return obj.udpMain(client)
+	}
+	remoteAddress.Scheme = client.option.schema
+	remoteAddress.Host = remoteAddress.IP.String()
+	if strings.HasPrefix(remoteAddress.String(), "127.0.0.1") || strings.HasPrefix(remoteAddress.String(), "localhost") {
+		if remoteAddress.Port == obj.port {
 			return errors.New("loop addr error")
 		}
 	}
-	pu, _ := url.Parse(addr)
+	pu, _ := url.Parse(remoteAddress.String())
 	//获取代理
 	proxyUrl, err := obj.GetProxy(ctx, pu)
 	if err != nil {
@@ -169,23 +145,24 @@ func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
 	netword := "tcp"
 	var proxyServer net.Conn
 	if proxyUrl != nil {
-		pu.Host = host
-		pu.Scheme = client.option.schema
-		proxyServer, err = obj.dialer.DialProxyContext(ctx, requests.GetRequestOption(ctx), netword, obj.TlsConfig(), proxyUrl, pu)
+		proxyAddress, err := requests.GetAddressWithUrl(proxyUrl)
+		if err != nil {
+			return err
+		}
+
+		proxyServer, err = obj.dialer.DialProxyContext(ctx, requests.GetRequestOption(ctx), netword, obj.TlsConfig(), proxyAddress, remoteAddress)
 	} else {
-		proxyServer, err = obj.dialer.DialContext(ctx, requests.GetRequestOption(ctx), netword, addr)
+		proxyServer, err = obj.dialer.DialContext(ctx, requests.GetRequestOption(ctx), netword, remoteAddress)
 	}
 	if err != nil {
 		return err
 	}
 	server := newProxyCon(proxyServer, bufio.NewReader(proxyServer), *client.option, false)
-	client.option.port = port
-	client.option.host = host
-
-	server.option.port = port
-	server.option.host = host
+	client.option.port = strconv.Itoa(remoteAddress.Port)
+	client.option.host = remoteAddress.Host
+	server.option.port = strconv.Itoa(remoteAddress.Port)
+	server.option.host = remoteAddress.Host
 	defer server.Close()
-
 	if client.option.schema == "https" {
 		client.option.ja3Spec = obj.ja3Spec
 		client.option.h2Ja3Spec = obj.h2Ja3Spec
@@ -193,58 +170,19 @@ func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
 	return obj.copyMain(ctx, client, server)
 }
 
-func (obj *Client) getSocketAddr(client *ProxyConn) (string, string, error) {
-	buf := make([]byte, 4)
-	addr := ""
+func (obj *Client) getCmd(client *ProxyConn) (byte, error) {
+	buf := make([]byte, 3)
 	_, err := io.ReadFull(client.reader, buf) //读取版本号，CMD，RSV ，ATYP ，ADDR ，PORT
 	if err != nil {
-		return "", addr, fmt.Errorf("read header failed:%w", err)
+		return 0, fmt.Errorf("read header failed:%w", err)
 	}
-	ver, cmd, atyp := buf[0], buf[1], buf[3]
+	ver, cmd := buf[0], buf[1]
 	if ver != 5 {
-		return "", addr, fmt.Errorf("not supported ver:%v", ver)
+		return 0, fmt.Errorf("not supported ver:%v", ver)
 	}
-	var ctyp string
-	if cmd == 1 {
-		ctyp = "tcp"
-	} else if cmd == 3 {
-		ctyp = "udp"
-	} else {
-		return "", addr, fmt.Errorf("not supported cmd:%v", ver)
-	}
-	switch atyp {
-	case 1: //ipv4地址
-		if _, err = io.ReadFull(client.reader, buf); err != nil {
-			return ctyp, addr, fmt.Errorf("read atyp failed:%w", err)
-		}
-		addr = net.IPv4(buf[0], buf[1], buf[2], buf[3]).String()
-	case 3: //域名
-		hostSize, err := client.reader.ReadByte() //域名的长度
-		if err != nil {
-			return ctyp, addr, fmt.Errorf("read hostSize failed:%w", err)
-		}
-		host := make([]byte, hostSize)
-		if _, err = io.ReadFull(client.reader, host); err != nil {
-			return ctyp, addr, fmt.Errorf("read host failed:%w", err)
-		}
-		addr = tools.BytesToString(host)
-	case 4: //IPv6地址
-		host := make([]byte, 16)
-		if _, err = io.ReadFull(client.reader, host); err != nil {
-			return ctyp, addr, fmt.Errorf("read atyp failed:%w", err)
-		}
-		addr = net.IP(host).String()
-	default:
-		return ctyp, addr, errors.New("invalid atyp")
-	}
-	if _, err = io.ReadFull(client.reader, buf[:2]); err != nil { //读取端口号
-		return ctyp, addr, fmt.Errorf("read port failed:%w", err)
-	}
-	if ctyp == "tcp" {
-		_, err = client.Write([]byte{0x05, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
-	}
-	return ctyp, net.JoinHostPort(addr, strconv.Itoa(int(binary.BigEndian.Uint16(buf[:2])))), err
+	return cmd, nil
 }
+
 func (obj *Client) verifySocket(client *ProxyConn) error {
 	ver, err := client.reader.ReadByte() //读取第一个字节判断是否是socks5协议
 	if err != nil {

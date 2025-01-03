@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"log"
 	"net"
 	"slices"
 
@@ -41,7 +40,6 @@ func (obj *Client) wsCopy(wsWriter *websocket.Conn, wsReader *websocket.Conn) (e
 			}
 		}
 		if err = wsWriter.WriteMessage(msgType, msgData); err != nil {
-			log.Print(err, "  == 222")
 			return
 		}
 	}
