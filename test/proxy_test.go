@@ -23,7 +23,11 @@ func TestProxy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{Proxy: "http://" + proxyIp})
+	resp, err := reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{
+		ClientOption: requests.ClientOption{
+			Proxy: "http://" + proxyIp,
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -31,14 +35,22 @@ func TestProxy(t *testing.T) {
 	if jsonData, _ := resp.Json(); jsonData.Get("ip").String() == "" {
 		t.Fatal("代理bug")
 	}
-	resp, err = reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{Proxy: "https://" + proxyIp})
+	resp, err = reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{
+		ClientOption: requests.ClientOption{
+			Proxy: "https://" + proxyIp,
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if jsonData, _ := resp.Json(); jsonData.Get("ip").String() == "" {
 		t.Fatal("代理bug")
 	}
-	resp, err = reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{Proxy: "socks5://" + proxyIp})
+	resp, err = reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{
+		ClientOption: requests.ClientOption{
+			Proxy: "socks5://" + proxyIp,
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,21 +86,34 @@ func TestProxy2(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := reqCli.Request(nil, "get", "https://httpbin.org/ip", requests.RequestOption{Proxy: "http://" + proxyIp})
+	resp, err := reqCli.Request(nil, "get", "https://httpbin.org/ip", requests.RequestOption{
+		ClientOption: requests.ClientOption{
+
+			Proxy: "http://" + proxyIp,
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if jsonData, _ := resp.Json(); jsonData.Get("origin").String() == "" {
 		t.Fatal("代理bug")
 	}
-	resp, err = reqCli.Request(nil, "get", "https://httpbin.org/ip", requests.RequestOption{Proxy: "https://" + proxyIp})
+	resp, err = reqCli.Request(nil, "get", "https://httpbin.org/ip", requests.RequestOption{
+		ClientOption: requests.ClientOption{
+			Proxy: "https://" + proxyIp,
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if jsonData, _ := resp.Json(); jsonData.Get("origin").String() == "" {
 		t.Fatal("代理bug")
 	}
-	resp, err = reqCli.Request(nil, "get", "https://httpbin.org/ip", requests.RequestOption{Proxy: "socks5://" + proxyIp})
+	resp, err = reqCli.Request(nil, "get", "https://httpbin.org/ip", requests.RequestOption{
+		ClientOption: requests.ClientOption{
+			Proxy: "socks5://" + proxyIp,
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,8 +143,12 @@ func TestProxyJa3(t *testing.T) {
 	log.Print("ddd0")
 	// reqCli.MaxRetries = 2
 	// resp, err := reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{})
-	resp, err := reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{Proxy: "http://admin:password@" + proxyIp})
-	// resp, err := reqCli.Request(nil, "get", "https://httpbin.org/ip", requests.RequestOption{Proxy: "http://admin:password@" + proxyIp})
+	resp, err := reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{
+		ClientOption: requests.ClientOption{
+			Proxy: "http://admin:password@" + proxyIp,
+		},
+	})
+	// resp, err := reqCli.Request(nil, "get", "https://httpbin.org/ip", requests.RequestOption{ClientOption:requests.ClientOption{Proxy: "http://admin:password@" + proxyIp}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,8 +159,13 @@ func TestProxyJa3(t *testing.T) {
 		t.Fatal("代理bug")
 	}
 	log.Print("ddd3")
-	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{Proxy: "https://admin:password@" + proxyIp})
-	// resp, err = reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{Proxy: "https://admin:password@" + proxyIp})
+	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{
+		ClientOption: requests.ClientOption{
+
+			Proxy: "https://admin:password@" + proxyIp,
+		},
+	})
+	// resp, err = reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{ClientOption:requests.ClientOption{Proxy: "https://admin:password@" + proxyI}p})
 	if err != nil {
 		time.Sleep(time.Second * 2)
 		t.Fatal(err)
@@ -142,7 +176,12 @@ func TestProxyJa3(t *testing.T) {
 		t.Fatal("代理bug")
 	}
 	log.Print("ddd4")
-	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{Proxy: "socks5://admin:password@" + proxyIp})
+	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{
+		ClientOption: requests.ClientOption{
+
+			Proxy: "socks5://admin:password@" + proxyIp,
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,7 +208,11 @@ func TestProxyH2Ja3(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	resp, err := reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{Proxy: "http://admin:password@" + proxyIp})
+	resp, err := reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{
+		ClientOption: requests.ClientOption{
+			Proxy: "http://admin:password@" + proxyIp,
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,8 +221,12 @@ func TestProxyH2Ja3(t *testing.T) {
 		log.Print(resp.Text())
 		t.Fatal("代理bug")
 	}
-	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{Proxy: "https://admin:password@" + proxyIp})
-	// resp, err = reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{Proxy: "https://admin:password@" + proxyIp})
+	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{
+		ClientOption: requests.ClientOption{
+			Proxy: "https://admin:password@" + proxyIp,
+		},
+	})
+	// resp, err = reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{ClientOption:requests.ClientOption{Proxy: "https://admin:password@" + proxyI}p})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +235,12 @@ func TestProxyH2Ja3(t *testing.T) {
 		log.Print(resp.Text())
 		t.Fatal("代理bug")
 	}
-	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{Proxy: "socks5://admin:password@" + proxyIp})
+	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{
+		ClientOption: requests.ClientOption{
+
+			Proxy: "socks5://admin:password@" + proxyIp,
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -217,8 +269,8 @@ func TestProxyAuth(t *testing.T) {
 		t.Fatal(err)
 	}
 	var resp *requests.Response
-	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{Proxy: "http://admin:password@" + proxyIp})
-	// resp, err := reqCli.Request(nil, "get", "https://httpbin.org/ip", requests.RequestOption{Proxy: "http://admin:password@" + proxyIp})
+	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{ClientOption: requests.ClientOption{Proxy: "http://admin:password@" + proxyIp}})
+	// resp, err := reqCli.Request(nil, "get", "https://httpbin.org/ip", requests.RequestOption{ClientOption:requests.ClientOption{Proxy: "http://admin:password@" + proxyIp}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +278,7 @@ func TestProxyAuth(t *testing.T) {
 	if jsonData.Get("digest").String() == "" || jsonData.Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
 		t.Fatal("代理bug")
 	}
-	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{Proxy: "https://admin:password@" + proxyIp})
+	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{ClientOption: requests.ClientOption{Proxy: "https://admin:password@" + proxyIp}})
 	if err != nil {
 		time.Sleep(time.Second * 2)
 		t.Fatal(err)
@@ -235,7 +287,7 @@ func TestProxyAuth(t *testing.T) {
 	if jsonData.Get("digest").String() == "" || jsonData.Get("digest").String() == "4e8e7b3f6585690ad91147bb2f5ad681" {
 		t.Fatal("代理bug")
 	}
-	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{Proxy: "socks5://admin:password@" + proxyIp})
+	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1", requests.RequestOption{ClientOption: requests.ClientOption{Proxy: "socks5://admin:password@" + proxyIp}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -274,7 +326,7 @@ func TestProxyJa32(t *testing.T) {
 		t.Fatal(err)
 	}
 	resp, err = reqCli.Request(nil, "get", "https://tools.scrapfly.io/api/fp/ja3?extended=1")
-	// resp, err = reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{Proxy: "https://" + proxyIp})
+	// resp, err = reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{ClientOption:requests.ClientOption{Proxy: "https://" + proxyIp})
 	if err != nil {
 		time.Sleep(time.Second * 2)
 		t.Fatal(err)

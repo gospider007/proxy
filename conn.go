@@ -13,8 +13,8 @@ import (
 )
 
 type ProxyOption struct {
-	ja3Spec   ja3.Ja3Spec   //ja3指纹
-	h2Ja3Spec ja3.H2Ja3Spec //h2Ja3指纹
+	spec   ja3.Spec   //ja3指纹
+	h2Spec ja3.H2Spec //h2Ja3指纹
 
 	init     bool
 	http2    bool

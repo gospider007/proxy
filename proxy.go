@@ -57,11 +57,11 @@ type ClientOption struct {
 	VerifyAuthWithHttp func(*http.Request) error
 	//支持根据http,https代理的请求，动态生成ja3,h2指纹。注意这请求是客户端和代理协议协商的请求，不是客户端请求目标地址的请求
 	//返回空结构体，则不会设置指纹
-	CreateSpecWithHttp func(*http.Request) (ja3.Ja3Spec, ja3.H2Ja3Spec)
-	Ja3                bool          //是否开启ja3
-	Ja3Spec            ja3.Ja3Spec   //指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
-	H2Ja3              bool          //是否开启h2 指纹
-	H2Ja3Spec          ja3.H2Ja3Spec //h2 指纹
+	CreateSpecWithHttp func(*http.Request) (ja3.Spec, ja3.H2Spec)
+	Ja3                bool       //是否开启ja3
+	Spec               ja3.Spec   //指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
+	H2Ja3              bool       //是否开启h2 指纹
+	H2Spec             ja3.H2Spec //h2 指纹
 
 	TlsConfig  *tls.Config
 	UtlsConfig *utls.Config
@@ -80,11 +80,11 @@ type Client struct {
 	wsCallBack          func(websocket.MessageType, []byte, WsType) error
 	httpConnectCallBack func(*http.Request) error
 	verifyAuthWithHttp  func(*http.Request) error
-	createSpecWithHttp  func(*http.Request) (ja3.Ja3Spec, ja3.H2Ja3Spec)
+	createSpecWithHttp  func(*http.Request) (ja3.Spec, ja3.H2Spec)
 
-	ja3Spec ja3.Ja3Spec //指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
+	spec ja3.Spec //指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
 
-	h2Ja3Spec ja3.H2Ja3Spec //h2 指纹
+	h2Spec ja3.H2Spec //h2 指纹
 
 	err      error //错误
 	cert     tls.Certificate
@@ -127,11 +127,11 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 			PreferSkipResumptionOnNilExtension: true,
 		}
 	}
-	if !option.Ja3Spec.IsSet() && option.Ja3 {
-		option.Ja3Spec = ja3.DefaultJa3Spec()
+	if !option.Spec.IsSet() && option.Ja3 {
+		option.Spec = ja3.DefaultSpec()
 	}
-	if !option.H2Ja3Spec.IsSet() && option.H2Ja3 {
-		option.H2Ja3Spec = ja3.DefaultH2Ja3Spec()
+	if !option.H2Spec.IsSet() && option.H2Ja3 {
+		option.H2Spec = ja3.DefaultH2Spec()
 	}
 	server := Client{
 		tlsConfig:           option.TlsConfig,
@@ -144,8 +144,8 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		requestCallBack:     option.RequestCallBack,
 		verifyAuthWithHttp:  option.VerifyAuthWithHttp,
 		createSpecWithHttp:  option.CreateSpecWithHttp,
-		ja3Spec:             option.Ja3Spec,
-		h2Ja3Spec:           option.H2Ja3Spec,
+		spec:                option.Spec,
+		h2Spec:              option.H2Spec,
 	}
 	if option.Addr == "" {
 		option.Addr = ":0"

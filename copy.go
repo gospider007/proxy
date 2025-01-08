@@ -61,7 +61,7 @@ func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server 
 	defer cnl()
 	serverConn, err := http2.NewClientConn(func() {
 		cnl()
-	}, server, client.option.h2Ja3Spec)
+	}, server, client.option.h2Spec)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *Pr
 	defer server.Close()
 	serverConn, err := http2.NewClientConn(func() {
 		client.Close()
-	}, server, client.option.h2Ja3Spec)
+	}, server, client.option.h2Spec)
 	if err != nil {
 		return err
 	}
@@ -197,8 +197,8 @@ func (obj *Client) copyMain(ctx context.Context, client *ProxyConn, server *Prox
 	} else if client.option.schema == "https" {
 		if obj.requestCallBack != nil ||
 			obj.wsCallBack != nil ||
-			client.option.ja3Spec.IsSet() ||
-			client.option.h2Ja3Spec.IsSet() ||
+			client.option.spec.IsSet() ||
+			client.option.h2Spec.IsSet() ||
 			client.option.method != http.MethodConnect {
 			return obj.copyHttpsMain(ctx, client, server)
 		}
@@ -218,7 +218,7 @@ func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *
 	}
 	if client.option.http2 && server.option.http2 { //http22 逻辑
 		if obj.requestCallBack != nil ||
-			client.option.h2Ja3Spec.IsSet() { //需要拦截请求 或需要设置h2指纹，就走12
+			client.option.h2Spec.IsSet() { //需要拦截请求 或需要设置h2指纹，就走12
 			return obj.http22Copy(ctx, client, server)
 		}
 		go func() {
@@ -273,7 +273,7 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 			} else {
 				nextProtos = []string{"h2", "http/1.1"}
 			}
-			tlsServer, _, negotiatedProtocol, err := obj.tlsServer(ctx, server, client.option.host, nextProtos, client.option.ja3Spec)
+			tlsServer, _, negotiatedProtocol, err := obj.tlsServer(ctx, server, client.option.host, nextProtos, client.option.spec)
 			if err != nil {
 				return err
 			}
@@ -292,7 +292,7 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 		if serverName == "" {
 			serverName = gtls.GetServerName(client.option.host)
 		}
-		tlsServer, peerCertificates, negotiatedProtocol, err = obj.tlsServer(ctx, server, serverName, chi.SupportedProtos, client.option.ja3Spec)
+		tlsServer, peerCertificates, negotiatedProtocol, err = obj.tlsServer(ctx, server, serverName, chi.SupportedProtos, client.option.spec)
 		if err != nil {
 			return nil, err
 		}
@@ -331,12 +331,12 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 	serverProxy := newProxyCon(tlsServer, bufio.NewReader(tlsServer), *server.option, false)
 	return obj.copyHttpMain(ctx, clientProxy, serverProxy)
 }
-func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, nextProtos []string, ja3Spec ja3.Ja3Spec) (net.Conn, []*x509.Certificate, string, error) {
-	if ja3Spec.IsSet() {
+func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, nextProtos []string, spec ja3.Spec) (net.Conn, []*x509.Certificate, string, error) {
+	if spec.IsSet() {
 		utlsConfig := obj.UtlsConfig()
 		utlsConfig.NextProtos = nextProtos
 		utlsConfig.ServerName = gtls.GetServerName(addr)
-		tlsConn, err := ja3.NewClient(ctx, conn, ja3Spec, !slices.Contains(nextProtos, "h2"), utlsConfig)
+		tlsConn, err := ja3.NewClient(ctx, conn, spec, slices.Contains(nextProtos, "h2"), utlsConfig)
 		if err != nil {
 			return tlsConn, nil, "", err
 		}

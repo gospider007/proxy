@@ -44,7 +44,7 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 			return err
 		}
 		remoteAddress.Scheme = client.option.schema
-		if proxyServer, err = obj.dialer.DialProxyContext(ctx, requests.GetRequestOption(ctx), "tcp", obj.TlsConfig(), proxyAddress, remoteAddress); err != nil {
+		if _, proxyServer, err = obj.dialer.DialProxyContext(ctx, requests.GetRequestOption(ctx), "tcp", obj.TlsConfig(), proxyAddress, remoteAddress); err != nil {
 			return err
 		}
 	} else {
@@ -56,20 +56,20 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 	defer server.Close()
 	if client.option.schema == "https" {
 		if obj.createSpecWithHttp != nil {
-			ja3Spec, h2Ja3Spec := obj.createSpecWithHttp(clientReq)
-			if ja3Spec.IsSet() {
-				client.option.ja3Spec = ja3Spec
+			spec, h2Spec := obj.createSpecWithHttp(clientReq)
+			if spec.IsSet() {
+				client.option.spec = spec
 			} else {
-				client.option.ja3Spec = obj.ja3Spec
+				client.option.spec = obj.spec
 			}
-			if h2Ja3Spec.IsSet() {
-				client.option.h2Ja3Spec = h2Ja3Spec
+			if h2Spec.IsSet() {
+				client.option.h2Spec = h2Spec
 			} else {
-				client.option.h2Ja3Spec = obj.h2Ja3Spec
+				client.option.h2Spec = obj.h2Spec
 			}
 		} else {
-			client.option.ja3Spec = obj.ja3Spec
-			client.option.h2Ja3Spec = obj.h2Ja3Spec
+			client.option.spec = obj.spec
+			client.option.h2Spec = obj.h2Spec
 		}
 	}
 	if clientReq.Method == http.MethodConnect {

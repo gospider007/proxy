@@ -150,7 +150,7 @@ func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
 			return err
 		}
 
-		proxyServer, err = obj.dialer.DialProxyContext(ctx, requests.GetRequestOption(ctx), netword, obj.TlsConfig(), proxyAddress, remoteAddress)
+		_, proxyServer, err = obj.dialer.DialProxyContext(ctx, requests.GetRequestOption(ctx), netword, obj.TlsConfig(), proxyAddress, remoteAddress)
 	} else {
 		proxyServer, err = obj.dialer.DialContext(ctx, requests.GetRequestOption(ctx), netword, remoteAddress)
 	}
@@ -164,8 +164,8 @@ func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
 	server.option.host = remoteAddress.Host
 	defer server.Close()
 	if client.option.schema == "https" {
-		client.option.ja3Spec = obj.ja3Spec
-		client.option.h2Ja3Spec = obj.h2Ja3Spec
+		client.option.spec = obj.spec
+		client.option.h2Spec = obj.h2Spec
 	}
 	return obj.copyMain(ctx, client, server)
 }
