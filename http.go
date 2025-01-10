@@ -44,11 +44,11 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 			return err
 		}
 		remoteAddress.Scheme = client.option.schema
-		if _, proxyServer, err = obj.dialer.DialProxyContext(ctx, requests.GetRequestOption(ctx), "tcp", obj.TlsConfig(), proxyAddress, remoteAddress); err != nil {
+		if _, proxyServer, err = obj.dialer.DialProxyContext(requests.NewResponse(ctx, requests.RequestOption{}), "tcp", obj.TlsConfig(), proxyAddress, remoteAddress); err != nil {
 			return err
 		}
 	} else {
-		if proxyServer, err = obj.dialer.DialContext(ctx, requests.GetRequestOption(ctx), "tcp", addr); err != nil {
+		if proxyServer, err = obj.dialer.DialContext(requests.NewResponse(ctx, requests.RequestOption{}), "tcp", addr); err != nil {
 			return err
 		}
 	}

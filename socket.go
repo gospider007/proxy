@@ -145,14 +145,14 @@ func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
 	netword := "tcp"
 	var proxyServer net.Conn
 	if proxyUrl != nil {
-		proxyAddress, err := requests.GetAddressWithUrl(proxyUrl)
+		var proxyAddress requests.Address
+		proxyAddress, err = requests.GetAddressWithUrl(proxyUrl)
 		if err != nil {
 			return err
 		}
-
-		_, proxyServer, err = obj.dialer.DialProxyContext(ctx, requests.GetRequestOption(ctx), netword, obj.TlsConfig(), proxyAddress, remoteAddress)
+		_, proxyServer, err = obj.dialer.DialProxyContext(requests.NewResponse(ctx, requests.RequestOption{}), netword, obj.TlsConfig(), proxyAddress, remoteAddress)
 	} else {
-		proxyServer, err = obj.dialer.DialContext(ctx, requests.GetRequestOption(ctx), netword, remoteAddress)
+		proxyServer, err = obj.dialer.DialContext(requests.NewResponse(ctx, requests.RequestOption{}), netword, remoteAddress)
 	}
 	if err != nil {
 		return err
