@@ -8,17 +8,18 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"strconv"
-	"strings"
-
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
 
 	"github.com/gospider007/requests"
 	"github.com/gospider007/tools"
 )
 
-func (s *Client) udpMain(client *ProxyConn) error {
+func (s *Client) udpMain(ctx context.Context, client *ProxyConn) error {
+	done := make(chan struct{})
+	defer close(done)
 	udpConn, err := net.ListenUDP("udp", &net.UDPAddr{ //监听udp 端口
 		IP: net.IPv4(0, 0, 0, 0),
 	})
@@ -26,8 +27,16 @@ func (s *Client) udpMain(client *ProxyConn) error {
 		return err
 	}
 	defer udpConn.Close()
+	go func() {
+		select {
+		case <-ctx.Done():
+			client.Close()
+			udpConn.Close()
+		case <-done:
+		}
+	}()
 	ip, port := client.LocalAddr().(*net.TCPAddr).IP, udpConn.LocalAddr().(*net.UDPAddr).Port
-	_, err = client.Write([]byte{0x05, 0x00, 0})
+	_, err = client.Write([]byte{0x05, 0x00, 0x00})
 	if err != nil {
 		return err
 	}
@@ -35,6 +44,7 @@ func (s *Client) udpMain(client *ProxyConn) error {
 	if err != nil {
 		return err
 	}
+	//udp main
 
 	go func() {
 		var buf [1]byte
@@ -100,24 +110,19 @@ func (s *Client) udpMain(client *ProxyConn) error {
 		}
 	}
 }
-
-func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
-	defer client.Close()
-	var err error
-	if err = obj.verifySocket(client); err != nil {
-		return err
-	}
-	//获取serverAddr
-	cmd, err := obj.getCmd(client)
+func (obj *Client) tcpMain(ctx context.Context, client *ProxyConn) error {
+	_, err := client.Write([]byte{0x05, 0x00, 0x00})
 	if err != nil {
 		return err
 	}
-	remoteAddress, err := requests.ReadUdpAddr(client.reader)
+	err = requests.WriteUdpAddr(client, requests.Address{IP: net.IPv4(0, 0, 0, 0), Port: 0})
 	if err != nil {
 		return err
 	}
-	if cmd == 3 {
-		return obj.udpMain(client)
+	var remoteAddress requests.Address
+	remoteAddress, err = requests.ReadUdpAddr(client.reader)
+	if err != nil {
+		return err
 	}
 	remoteAddress.Scheme = client.option.schema
 	remoteAddress.Host = remoteAddress.IP.String()
@@ -168,6 +173,28 @@ func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
 		client.option.h2Spec = obj.h2Spec
 	}
 	return obj.copyMain(ctx, client, server)
+
+}
+func (obj *Client) sockes5Handle(ctx context.Context, client *ProxyConn) error {
+	defer client.Close()
+	var err error
+	if err = obj.verifySocket(client); err != nil {
+		return err
+	}
+	//获取serverAddr
+	cmd, err := obj.getCmd(client)
+	if err != nil {
+		return err
+	}
+	switch cmd {
+	case 1:
+		return obj.tcpMain(ctx, client)
+	case 3:
+		return obj.udpMain(ctx, client)
+	default:
+		return fmt.Errorf("not supported cmd:%v", cmd)
+	}
+
 }
 
 func (obj *Client) getCmd(client *ProxyConn) (byte, error) {
