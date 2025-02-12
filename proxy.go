@@ -57,9 +57,9 @@ type ClientOption struct {
 	VerifyAuthWithHttp func(*http.Request) error
 	//支持根据http,https代理的请求，动态生成ja3,h2指纹。注意这请求是客户端和代理协议协商的请求，不是客户端请求目标地址的请求
 	//返回空结构体，则不会设置指纹
-	CreateSpecWithHttp func(*http.Request) (ja3.Spec, ja3.H2Spec)
+	CreateSpecWithHttp func(*http.Request) (any, ja3.H2Spec)
 	Ja3                bool       //是否开启ja3
-	Spec               ja3.Spec   //指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
+	Spec               any        //指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
 	H2Ja3              bool       //是否开启h2 指纹
 	H2Spec             ja3.H2Spec //h2 指纹
 
@@ -74,17 +74,18 @@ const (
 )
 
 type Client struct {
+	specClient          *ja3.Client
 	debug               bool
 	disVerify           bool
 	requestCallBack     func(*http.Request, *http.Response) error
 	wsCallBack          func(websocket.MessageType, []byte, WsType) error
 	httpConnectCallBack func(*http.Request) error
 	verifyAuthWithHttp  func(*http.Request) error
-	createSpecWithHttp  func(*http.Request) (ja3.Spec, ja3.H2Spec)
+	createSpecWithHttp  func(*http.Request) (any, ja3.H2Spec)
 
-	spec ja3.Spec //指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
-
-	h2Spec ja3.H2Spec //h2 指纹
+	ja3Spec any        //指定ja3Spec,使用ja3.CreateSpecWithStr 或者ja3.CreateSpecWithId 生成
+	ja3     bool       //是否开启ja3
+	h2Spec  ja3.H2Spec //h2 指纹
 
 	err      error //错误
 	cert     tls.Certificate
@@ -127,13 +128,14 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 			PreferSkipResumptionOnNilExtension: true,
 		}
 	}
-	if !option.Spec.IsSet() && option.Ja3 {
+	if option.Spec == nil && option.Ja3 {
 		option.Spec = ja3.DefaultSpec()
 	}
 	if !option.H2Spec.IsSet() && option.H2Ja3 {
 		option.H2Spec = ja3.DefaultH2Spec()
 	}
 	server := Client{
+		specClient:          ja3.NewClient(),
 		tlsConfig:           option.TlsConfig,
 		utlsConfig:          option.UtlsConfig,
 		getProxy:            option.GetProxy,
@@ -144,7 +146,8 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		requestCallBack:     option.RequestCallBack,
 		verifyAuthWithHttp:  option.VerifyAuthWithHttp,
 		createSpecWithHttp:  option.CreateSpecWithHttp,
-		spec:                option.Spec,
+		ja3Spec:             option.Spec,
+		ja3:                 option.Ja3,
 		h2Spec:              option.H2Spec,
 	}
 	if option.Addr == "" {
@@ -179,19 +182,6 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		server.proxyTlsConfig.Certificates = []tls.Certificate{server.cert}
 		server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
 	} else {
-		// if option.DomainNames != nil {
-		// 	if server.proxyTlsConfig, err = gtls.TLS(option.DomainNames); err != nil {
-		// 		return nil, err
-		// 	}
-		// 	server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
-		// } else {
-		// 	cert, err := gtls.CreateProxyCertWithName("gospider")
-		// 	if err != nil {
-		// 		return nil, err
-		// 	}
-		// 	server.proxyTlsConfig.Certificates = []tls.Certificate{cert}
-		// 	server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
-		// }
 		if option.DomainNames != nil {
 			if server.proxyTlsConfig, err = gtls.TLS(option.DomainNames); err != nil {
 				return nil, err

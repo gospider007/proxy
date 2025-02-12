@@ -197,7 +197,8 @@ func (obj *Client) copyMain(ctx context.Context, client *ProxyConn, server *Prox
 	} else if client.option.schema == "https" {
 		if obj.requestCallBack != nil ||
 			obj.wsCallBack != nil ||
-			client.option.spec.IsSet() ||
+			client.option.ja3Spec != nil ||
+			client.option.ja3 ||
 			client.option.h2Spec.IsSet() ||
 			client.option.method != http.MethodConnect {
 			return obj.copyHttpsMain(ctx, client, server)
@@ -273,7 +274,7 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 			} else {
 				nextProtos = []string{"h2", "http/1.1"}
 			}
-			tlsServer, _, negotiatedProtocol, err := obj.tlsServer(ctx, server, client.option.host, nextProtos, client.option.spec)
+			tlsServer, _, negotiatedProtocol, err := obj.tlsServer(ctx, server, client.option.host, nextProtos, client.option)
 			if err != nil {
 				return err
 			}
@@ -292,7 +293,7 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 		if serverName == "" {
 			serverName = gtls.GetServerName(client.option.host)
 		}
-		tlsServer, peerCertificates, negotiatedProtocol, err = obj.tlsServer(ctx, server, serverName, chi.SupportedProtos, client.option.spec)
+		tlsServer, peerCertificates, negotiatedProtocol, err = obj.tlsServer(ctx, server, serverName, chi.SupportedProtos, client.option)
 		if err != nil {
 			return nil, err
 		}
@@ -331,12 +332,25 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 	serverProxy := newProxyCon(tlsServer, bufio.NewReader(tlsServer), *server.option, false)
 	return obj.copyHttpMain(ctx, clientProxy, serverProxy)
 }
-func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, nextProtos []string, spec ja3.Spec) (net.Conn, []*x509.Certificate, string, error) {
-	if spec.IsSet() {
+func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, nextProtos []string, clientOption *ProxyOption) (net.Conn, []*x509.Certificate, string, error) {
+	if clientOption.ja3Spec != nil || clientOption.ja3 {
+		var spec utls.ClientHelloSpec
+		var err error
+		if clientOption.ja3Spec != nil {
+			spec, err = ja3.CreateSpecWithClientHello(clientOption.ja3Spec)
+			if err != nil {
+				return nil, nil, "", err
+			}
+		} else {
+			spec = ja3.DefaultSpec()
+		}
+
 		utlsConfig := obj.UtlsConfig()
 		utlsConfig.NextProtos = nextProtos
-		utlsConfig.ServerName = gtls.GetServerName(addr)
-		tlsConn, err := ja3.NewClient(ctx, conn, spec, slices.Contains(nextProtos, "h2"), utlsConfig)
+		if err != nil {
+			return nil, nil, "", err
+		}
+		tlsConn, err := obj.specClient.Client(ctx, conn, spec, slices.Contains(nextProtos, "h2"), utlsConfig, gtls.GetServerName(addr))
 		if err != nil {
 			return tlsConn, nil, "", err
 		}
