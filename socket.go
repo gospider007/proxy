@@ -169,9 +169,8 @@ func (obj *Client) tcpMain(ctx context.Context, client *ProxyConn) error {
 	server.option.host = remoteAddress.Host
 	defer server.Close()
 	if client.option.schema == "https" {
-		client.option.ja3Spec = obj.ja3Spec
-		client.option.h2Spec = obj.h2Spec
-		client.option.ja3 = obj.ja3
+		client.option.spec = obj.spec
+		client.option.hSpec = obj.hSpec
 	}
 	return obj.copyMain(ctx, client, server)
 

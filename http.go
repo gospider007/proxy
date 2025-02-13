@@ -56,22 +56,21 @@ func (obj *Client) httpHandle(ctx context.Context, client *ProxyConn) error {
 	defer server.Close()
 	if client.option.schema == "https" {
 		if obj.createSpecWithHttp != nil {
-			spec, h2Spec := obj.createSpecWithHttp(clientReq)
+			spec, hSpec := obj.createSpecWithHttp(clientReq)
 			if spec != nil {
-				client.option.ja3Spec = spec
+				client.option.spec = spec
 			} else {
-				client.option.ja3Spec = obj.ja3Spec
+				client.option.spec = obj.spec
 			}
-			if h2Spec.IsSet() {
-				client.option.h2Spec = h2Spec
+			if hSpec.IsSet() {
+				client.option.hSpec = hSpec
 			} else {
-				client.option.h2Spec = obj.h2Spec
+				client.option.hSpec = obj.hSpec
 			}
 		} else {
-			client.option.ja3Spec = obj.ja3Spec
-			client.option.h2Spec = obj.h2Spec
+			client.option.spec = obj.spec
+			client.option.hSpec = obj.hSpec
 		}
-		client.option.ja3 = obj.ja3
 	}
 	if clientReq.Method == http.MethodConnect {
 		if _, err = client.Write([]byte(fmt.Sprintf("%s 200 Connection established\r\n\r\n", clientReq.Proto))); err != nil {
