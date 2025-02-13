@@ -340,7 +340,7 @@ func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, ne
 		if len(spec.Extensions) > 0 {
 			utlsConfig := obj.UtlsConfig()
 			utlsConfig.NextProtos = nextProtos
-			tlsConn, err := obj.specClient.Client(ctx, conn, spec, slices.Contains(nextProtos, "h2"), utlsConfig, gtls.GetServerName(addr))
+			tlsConn, err := obj.specClient.Client(ctx, conn, spec, utlsConfig, gtls.GetServerName(addr), !slices.Contains(nextProtos, "h2"))
 			if err != nil {
 				return tlsConn, nil, "", err
 			}
