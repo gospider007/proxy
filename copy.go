@@ -301,14 +301,16 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 		var cert tls.Certificate
 		if len(peerCertificates) > 0 {
 			preCert := peerCertificates[0]
-			if chi.ServerName == "" && preCert.IPAddresses == nil && serverName != "" {
+			if preCert.IPAddresses == nil {
 				if ip, ipType := gtls.ParseHost(serverName); ipType != 0 {
+					preCert.IPAddresses = []net.IP{ip}
+				} else if ip := obj.dialer.LookupIPAddrWithCache(serverName); ip != nil {
 					preCert.IPAddresses = []net.IP{ip}
 				}
 			}
-			cert, err = gtls.CreateProxyCertWithCert(nil, nil, preCert)
+			cert, err = gtls.CreateCertWithAddr(preCert.IPAddresses...)
 		} else {
-			cert, err = gtls.CreateProxyCertWithName(serverName)
+			cert, err = gtls.CreateCertWithAddr(net.IPv4(127, 0, 0, 1))
 		}
 		if err != nil {
 			return nil, err

@@ -182,7 +182,7 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 			}
 			server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
 		} else {
-			cert, err := gtls.CreateProxyCertWithName("gospider")
+			cert, err := gtls.CreateCertWithAddr(net.IPv4(127, 0, 0, 1))
 			if err != nil {
 				return nil, err
 			}
