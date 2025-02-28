@@ -8,22 +8,20 @@ import (
 
 	"net/http"
 
-	"github.com/gospider007/ja3"
+	"github.com/gospider007/requests"
 	"github.com/gospider007/websocket"
 )
 
 type ProxyOption struct {
-	spec  any       //ja3指纹
-	hSpec ja3.HSpec //h2Ja3指纹
-
-	init     bool
-	http2    bool
-	host     string
-	schema   string
-	method   string
-	port     string
-	isWs     bool
-	wsOption websocket.Option
+	gospiderSpec *requests.GospiderSpec
+	init         bool
+	http2        bool
+	host         string
+	schema       string
+	method       string
+	port         string
+	isWs         bool
+	wsOption     websocket.Option
 }
 type ProxyConn struct {
 	client bool

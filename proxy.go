@@ -57,14 +57,10 @@ type ClientOption struct {
 	VerifyAuthWithHttp func(*http.Request) error
 	//支持根据http,https代理的请求，动态生成ja3,h2指纹。注意这请求是客户端和代理协议协商的请求，不是客户端请求目标地址的请求
 	//返回空结构体，则不会设置指纹
-	CreateSpecWithHttp func(*http.Request) (any, ja3.HSpec)
-	Ja3                bool //是否开启ja3
-	Spec               any
-	H2Ja3              bool      //是否开启h2 指纹
-	HSpec              ja3.HSpec //h2 指纹
-
-	TlsConfig  *tls.Config
-	UtlsConfig *utls.Config
+	CreateSpecWithHttp func(*http.Request) *requests.GospiderSpec
+	Spec               string
+	TlsConfig          *tls.Config
+	UtlsConfig         *utls.Config
 }
 type WsType int
 
@@ -81,11 +77,9 @@ type Client struct {
 	wsCallBack          func(websocket.MessageType, []byte, WsType) error
 	httpConnectCallBack func(*http.Request) error
 	verifyAuthWithHttp  func(*http.Request) error
-	createSpecWithHttp  func(*http.Request) (any, ja3.HSpec)
+	createSpecWithHttp  func(*http.Request) *requests.GospiderSpec
 
-	spec any
-
-	hSpec ja3.HSpec //h2 指纹
+	gospiderSpec *requests.GospiderSpec //gospider 指纹
 
 	err      error //错误
 	cert     tls.Certificate
@@ -140,13 +134,20 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 		requestCallBack:     option.RequestCallBack,
 		verifyAuthWithHttp:  option.VerifyAuthWithHttp,
 		createSpecWithHttp:  option.CreateSpecWithHttp,
-		spec:                option.Spec,
-		hSpec:               option.HSpec,
 	}
 	if option.Addr == "" {
 		option.Addr = ":0"
 	}
 	var err error
+
+	var spec *requests.GospiderSpec
+	if option.Spec != "" {
+		if spec, err = requests.ParseGospiderSpec(option.Spec); err != nil {
+			return nil, err
+		}
+	}
+	server.gospiderSpec = spec
+
 	if option.Proxy != "" {
 		if server.proxy, err = gtls.VerifyProxy(option.Proxy); err != nil {
 			return nil, err

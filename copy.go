@@ -12,8 +12,6 @@ import (
 	"net/http"
 
 	"github.com/gospider007/gtls"
-	"github.com/gospider007/ja3"
-	"github.com/gospider007/net/http2"
 	"github.com/gospider007/tools"
 	"github.com/gospider007/websocket"
 	utls "github.com/refraction-networking/utls"
@@ -54,112 +52,114 @@ func (obj *Client) ProxyTlsConfig() *tls.Config {
 func (obj *Client) UtlsConfig() *utls.Config {
 	return obj.utlsConfig.Clone()
 }
-func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
-	defer client.Close()
-	defer server.Close()
-	ctx, cnl := context.WithCancel(preCtx)
-	defer cnl()
-	serverConn, err := http2.NewClientConn(func() {
-		cnl()
-	}, server, client.option.hSpec)
-	if err != nil {
-		return err
-	}
-	(&http2.Server{CloseCallBack: func() bool {
-		select {
-		case <-ctx.Done():
-			return true
-		default:
-			return false
-		}
-	}}).ServeConn(client, &http2.ServeConnOpts{
-		Context: preCtx,
-		Handler: http.HandlerFunc(
-			func(w http.ResponseWriter, r *http.Request) {
-				r.URL.Scheme = "https"
-				r.URL.Host = net.JoinHostPort(gtls.GetServerName(client.option.host), client.option.port)
-				if obj.requestCallBack != nil {
-					if err = obj.requestCallBack(r, nil); err != nil {
-						server.Close()
-						client.Close()
-						return
-					}
-				}
-				resp, err := serverConn.RoundTrip(r)
-				if err != nil {
-					server.Close()
-					client.Close()
-					return
-				}
-				if resp.ContentLength <= 0 && resp.TransferEncoding == nil {
-					resp.TransferEncoding = []string{"chunked"}
-				}
-				if obj.requestCallBack != nil {
-					if err = obj.requestCallBack(r, resp); err != nil {
-						server.Close()
-						client.Close()
-						return
-					}
-				}
-				for kk, vvs := range resp.Header {
-					for _, vv := range vvs {
-						w.Header().Add(kk, vv)
-					}
-				}
-				w.WriteHeader(resp.StatusCode)
-				if resp.Body != nil {
-					if err = tools.CopyWitchContext(r.Context(), w, resp.Body); err != nil {
-						server.Close()
-						client.Close()
-						return
-					}
-				}
-			},
-		),
-	})
-	return
-}
-func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
-	defer client.Close()
-	defer server.Close()
-	serverConn, err := http2.NewClientConn(func() {
-		client.Close()
-	}, server, client.option.hSpec)
-	if err != nil {
-		return err
-	}
-	var req *http.Request
-	var resp *http.Response
-	for {
-		if client.req != nil {
-			req, client.req = client.req, nil
-		} else {
-			if req, err = client.readRequest(ctx, obj.requestCallBack, nil); err != nil {
-				return
-			}
-		}
-		req.Proto = "HTTP/2.0"
-		req.ProtoMajor = 2
-		req.ProtoMinor = 0
-		if resp, err = serverConn.RoundTrip(req); err != nil {
-			return
-		}
-		if resp.ContentLength <= 0 && resp.TransferEncoding == nil {
-			resp.TransferEncoding = []string{"chunked"}
-		}
-		resp.Proto = "HTTP/1.1"
-		resp.ProtoMajor = 1
-		resp.ProtoMinor = 1
-		if obj.requestCallBack != nil {
-			if err = obj.requestCallBack(req, resp); err != nil {
-				return
-			}
-		}
-		if err = resp.Write(client); err != nil {
-			return
-		}
-	}
-}
+
+//	func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
+//		defer client.Close()
+//		defer server.Close()
+//		ctx, cnl := context.WithCancel(preCtx)
+//		defer cnl()
+//		serverConn, err := http2.NewClientConn(func() {
+//			cnl()
+//		}, server, client.option.gospiderSpec.H2Spec)
+//		if err != nil {
+//			return err
+//		}
+//		(&http2.Server{CloseCallBack: func() bool {
+//			select {
+//			case <-ctx.Done():
+//				return true
+//			default:
+//				return false
+//			}
+//		}}).ServeConn(client, &http2.ServeConnOpts{
+//			Context: preCtx,
+//			Handler: http.HandlerFunc(
+//				func(w http.ResponseWriter, r *http.Request) {
+//					r.URL.Scheme = "https"
+//					r.URL.Host = net.JoinHostPort(gtls.GetServerName(client.option.host), client.option.port)
+//					if obj.requestCallBack != nil {
+//						if err = obj.requestCallBack(r, nil); err != nil {
+//							server.Close()
+//							client.Close()
+//							return
+//						}
+//					}
+//					resp, err := serverConn.RoundTrip(r)
+//					if err != nil {
+//						server.Close()
+//						client.Close()
+//						return
+//					}
+//					if resp.ContentLength <= 0 && resp.TransferEncoding == nil {
+//						resp.TransferEncoding = []string{"chunked"}
+//					}
+//					if obj.requestCallBack != nil {
+//						if err = obj.requestCallBack(r, resp); err != nil {
+//							server.Close()
+//							client.Close()
+//							return
+//						}
+//					}
+//					for kk, vvs := range resp.Header {
+//						for _, vv := range vvs {
+//							w.Header().Add(kk, vv)
+//						}
+//					}
+//					w.WriteHeader(resp.StatusCode)
+//					if resp.Body != nil {
+//						if err = tools.CopyWitchContext(r.Context(), w, resp.Body); err != nil {
+//							server.Close()
+//							client.Close()
+//							return
+//						}
+//					}
+//				},
+//			),
+//		})
+//		return
+//	}
+//
+//	func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
+//		defer client.Close()
+//		defer server.Close()
+//		serverConn, err := http2.NewClientConn(func() {
+//			client.Close()
+//		}, server, client.option.hSpec)
+//		if err != nil {
+//			return err
+//		}
+//		var req *http.Request
+//		var resp *http.Response
+//		for {
+//			if client.req != nil {
+//				req, client.req = client.req, nil
+//			} else {
+//				if req, err = client.readRequest(ctx, obj.requestCallBack, nil); err != nil {
+//					return
+//				}
+//			}
+//			req.Proto = "HTTP/2.0"
+//			req.ProtoMajor = 2
+//			req.ProtoMinor = 0
+//			if resp, err = serverConn.RoundTrip(req); err != nil {
+//				return
+//			}
+//			if resp.ContentLength <= 0 && resp.TransferEncoding == nil {
+//				resp.TransferEncoding = []string{"chunked"}
+//			}
+//			resp.Proto = "HTTP/1.1"
+//			resp.ProtoMajor = 1
+//			resp.ProtoMinor = 1
+//			if obj.requestCallBack != nil {
+//				if err = obj.requestCallBack(req, resp); err != nil {
+//					return
+//				}
+//			}
+//			if err = resp.Write(client); err != nil {
+//				return
+//			}
+//		}
+//	}
 func (obj *Client) http11Copy(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
 	var req *http.Request
 	var rsp *http.Response
@@ -197,8 +197,7 @@ func (obj *Client) copyMain(ctx context.Context, client *ProxyConn, server *Prox
 	} else if client.option.schema == "https" {
 		if obj.requestCallBack != nil ||
 			obj.wsCallBack != nil ||
-			client.option.spec != nil ||
-			client.option.hSpec.IsSet() ||
+			client.option.gospiderSpec != nil ||
 			client.option.method != http.MethodConnect {
 			return obj.copyHttpsMain(ctx, client, server)
 		}
@@ -213,21 +212,21 @@ func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *
 	if client.option.http2 && !server.option.http2 { //http21 逻辑
 		return errors.New("没有21逻辑")
 	}
-	if !client.option.http2 && server.option.http2 { //http12 逻辑
-		return obj.http12Copy(ctx, client, server)
-	}
-	if client.option.http2 && server.option.http2 { //http22 逻辑
-		if obj.requestCallBack != nil ||
-			client.option.hSpec.IsSet() { //需要拦截请求 或需要设置h2指纹，就走12
-			return obj.http22Copy(ctx, client, server)
-		}
-		go func() {
-			defer client.Close()
-			defer server.Close()
-			tools.CopyWitchContext(ctx, client, server)
-		}()
-		return tools.CopyWitchContext(ctx, server, client)
-	}
+	// if !client.option.http2 && server.option.http2 { //http12 逻辑
+	// 	return obj.http12Copy(ctx, client, server)
+	// }
+	// if client.option.http2 && server.option.http2 { //http22 逻辑
+	// 	if obj.requestCallBack != nil ||
+	// 		client.option.hSpec.IsSet() { //需要拦截请求 或需要设置h2指纹，就走12
+	// 		return obj.http22Copy(ctx, client, server)
+	// 	}
+	// 	go func() {
+	// 		defer client.Close()
+	// 		defer server.Close()
+	// 		tools.CopyWitchContext(ctx, client, server)
+	// 	}()
+	// 	return tools.CopyWitchContext(ctx, server, client)
+	// }
 	if obj.wsCallBack == nil && obj.requestCallBack == nil { //没有回调直接返回
 		if client.req != nil {
 			if err = client.req.Write(server); err != nil {
@@ -332,20 +331,14 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 	return obj.copyHttpMain(ctx, clientProxy, serverProxy)
 }
 func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, nextProtos []string, clientOption *ProxyOption) (net.Conn, []*x509.Certificate, string, error) {
-	if clientOption.spec != nil {
-		spec, err := ja3.CreateSpec(clientOption.spec)
+	if clientOption.gospiderSpec.TLSSpec != nil {
+		utlsConfig := obj.UtlsConfig()
+		utlsConfig.NextProtos = nextProtos
+		tlsConn, err := obj.specClient.Client(ctx, conn, clientOption.gospiderSpec.TLSSpec, utlsConfig, gtls.GetServerName(addr), !slices.Contains(nextProtos, "h2"))
 		if err != nil {
-			return nil, nil, "", err
+			return tlsConn, nil, "", err
 		}
-		if len(spec.Extensions) > 0 {
-			utlsConfig := obj.UtlsConfig()
-			utlsConfig.NextProtos = nextProtos
-			tlsConn, err := obj.specClient.Client(ctx, conn, spec, utlsConfig, gtls.GetServerName(addr), !slices.Contains(nextProtos, "h2"))
-			if err != nil {
-				return tlsConn, nil, "", err
-			}
-			return tlsConn, tlsConn.ConnectionState().PeerCertificates, tlsConn.ConnectionState().NegotiatedProtocol, nil
-		}
+		return tlsConn, tlsConn.ConnectionState().PeerCertificates, tlsConn.ConnectionState().NegotiatedProtocol, nil
 	}
 	tlsConfig := obj.TlsConfig()
 	tlsConfig.NextProtos = nextProtos
