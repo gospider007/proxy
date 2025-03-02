@@ -25,7 +25,7 @@ func TestProxy(t *testing.T) {
 	}
 	resp, err := reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{
 		ClientOption: requests.ClientOption{
-			Proxy: "http://" + proxyIp,
+			Proxy: []string{"http://" + proxyIp},
 		},
 	})
 	if err != nil {
@@ -37,7 +37,7 @@ func TestProxy(t *testing.T) {
 	}
 	resp, err = reqCli.Request(nil, "get", "http://myip.top", requests.RequestOption{
 		ClientOption: requests.ClientOption{
-			Proxy: "https://" + proxyIp,
+			Proxy: []string{"https://" + proxyIp},
 		},
 	})
 	if err != nil {
