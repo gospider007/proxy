@@ -65,8 +65,8 @@ type ClientOption struct {
 type WsType int
 
 const (
-	Send = 1
-	Recv = 2
+	WsSend WsType = 1
+	WsRecv WsType = 2
 )
 
 type Client struct {

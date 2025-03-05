@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"log"
 	"net"
 	"slices"
 
@@ -27,12 +28,12 @@ func (obj *Client) wsCopy(wsWriter *websocket.Conn, wsReader *websocket.Conn) (e
 			return
 		}
 		if obj.wsCallBack != nil {
-			if wsReader.IsServer {
-				if err = obj.wsCallBack(msgType, msgData, Recv); err != nil {
+			if wsReader.IsClient() {
+				if err = obj.wsCallBack(msgType, msgData, WsRecv); err != nil {
 					return err
 				}
 			} else {
-				if err = obj.wsCallBack(msgType, msgData, Send); err != nil {
+				if err = obj.wsCallBack(msgType, msgData, WsSend); err != nil {
 					return err
 				}
 			}
@@ -243,6 +244,7 @@ func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *
 		return
 	}
 	if err = obj.http11Copy(ctx, client, server); err != nil { //http11 开始回调
+		log.Print(err)
 		return err
 	}
 	if obj.wsCallBack == nil { //没有ws 回调直接返回
@@ -254,9 +256,10 @@ func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *
 		return tools.CopyWitchContext(ctx, server, client)
 	}
 	//ws 开始回调
-	wsServer := websocket.NewClientConn(server, server.option.wsOption)
-	wsClient := websocket.NewServerConn(client, server.option.wsOption)
-	// go obj.wsCopy(wsClient, wsServer)
+	wsServer := websocket.NewConn(client, false, server.option.wsExtensions)
+	wsClient := websocket.NewConn(server, true, server.option.wsExtensions)
+	log.Print(server.option.wsExtensions)
+	go obj.wsCopy(wsClient, wsServer)
 	return obj.wsCopy(wsServer, wsClient)
 }
 func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {

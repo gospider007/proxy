@@ -9,7 +9,6 @@ import (
 	"net/http"
 
 	"github.com/gospider007/requests"
-	"github.com/gospider007/websocket"
 )
 
 type ProxyOption struct {
@@ -21,7 +20,7 @@ type ProxyOption struct {
 	method       string
 	port         string
 	isWs         bool
-	wsOption     websocket.Option
+	wsExtensions string
 }
 type ProxyConn struct {
 	client bool
@@ -80,9 +79,9 @@ func (obj *ProxyConn) readResponse(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	if response.StatusCode == 101 && response.Header.Get("Upgrade") == "WebSocket" {
+	if response.StatusCode == 101 {
 		obj.option.isWs = true
-		obj.option.wsOption = websocket.GetResponseHeaderOption(response.Header)
+		obj.option.wsExtensions = response.Header.Get("Sec-Websocket-Extensions")
 	}
 	return response, err
 }
