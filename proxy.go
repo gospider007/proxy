@@ -167,14 +167,15 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 	//dialer
 	server.dialer = &requests.Dialer{}
 	//证书
-	server.proxyTlsConfig = new(tls.Config)
 
 	if option.CrtFile != nil && option.KeyFile != nil {
 		if server.cert, err = tls.X509KeyPair(option.CrtFile, option.KeyFile); err != nil {
 			return nil, err
 		}
-		server.proxyTlsConfig.Certificates = []tls.Certificate{server.cert}
-		server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
+		server.proxyTlsConfig = &tls.Config{
+			NextProtos:   []string{"http/1.1"},
+			Certificates: []tls.Certificate{server.cert},
+		}
 	} else {
 		if option.DomainNames != nil {
 			if server.proxyTlsConfig, err = gtls.TLS(option.DomainNames); err != nil {
@@ -182,12 +183,9 @@ func NewClient(pre_ctx context.Context, option ClientOption) (*Client, error) {
 			}
 			server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
 		} else {
-			cert, err := gtls.CreateCertWithAddr(net.IPv4(127, 0, 0, 1))
-			if err != nil {
-				return nil, err
-			}
-			server.proxyTlsConfig.Certificates = []tls.Certificate{cert}
-			server.proxyTlsConfig.NextProtos = []string{"http/1.1"}
+			server.proxyTlsConfig = gtls.GetCertConfigForClient(&tls.Config{
+				NextProtos: []string{"http/1.1"},
+			})
 		}
 	}
 	//构造listen

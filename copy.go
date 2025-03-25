@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"log"
 	"net"
@@ -13,6 +12,7 @@ import (
 	"net/http"
 
 	"github.com/gospider007/gtls"
+	"github.com/gospider007/http2"
 	"github.com/gospider007/tools"
 	"github.com/gospider007/websocket"
 	utls "github.com/refraction-networking/utls"
@@ -54,72 +54,39 @@ func (obj *Client) UtlsConfig() *utls.Config {
 	return obj.utlsConfig.Clone()
 }
 
-//	func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
-//		defer client.Close()
-//		defer server.Close()
-//		ctx, cnl := context.WithCancel(preCtx)
-//		defer cnl()
-//		serverConn, err := http2.NewClientConn(func() {
-//			cnl()
-//		}, server, client.option.gospiderSpec.H2Spec)
-//		if err != nil {
-//			return err
-//		}
-//		(&http2.Server{CloseCallBack: func() bool {
-//			select {
-//			case <-ctx.Done():
-//				return true
-//			default:
-//				return false
-//			}
-//		}}).ServeConn(client, &http2.ServeConnOpts{
-//			Context: preCtx,
-//			Handler: http.HandlerFunc(
-//				func(w http.ResponseWriter, r *http.Request) {
-//					r.URL.Scheme = "https"
-//					r.URL.Host = net.JoinHostPort(gtls.GetServerName(client.option.host), client.option.port)
-//					if obj.requestCallBack != nil {
-//						if err = obj.requestCallBack(r, nil); err != nil {
-//							server.Close()
-//							client.Close()
-//							return
-//						}
-//					}
-//					resp, err := serverConn.RoundTrip(r)
-//					if err != nil {
-//						server.Close()
-//						client.Close()
-//						return
-//					}
-//					if resp.ContentLength <= 0 && resp.TransferEncoding == nil {
-//						resp.TransferEncoding = []string{"chunked"}
-//					}
-//					if obj.requestCallBack != nil {
-//						if err = obj.requestCallBack(r, resp); err != nil {
-//							server.Close()
-//							client.Close()
-//							return
-//						}
-//					}
-//					for kk, vvs := range resp.Header {
-//						for _, vv := range vvs {
-//							w.Header().Add(kk, vv)
-//						}
-//					}
-//					w.WriteHeader(resp.StatusCode)
-//					if resp.Body != nil {
-//						if err = tools.CopyWitchContext(r.Context(), w, resp.Body); err != nil {
-//							server.Close()
-//							client.Close()
-//							return
-//						}
-//					}
-//				},
-//			),
-//		})
-//		return
-//	}
-//
+func (obj *Client) http22Copy(preCtx context.Context, client *ProxyConn, server *ProxyConn) error {
+	defer client.Close()
+	defer server.Close()
+
+	http2Client := http2.Http2NewReaderFramer(client)
+	http2Server := http2.Http2NewReaderFramer(client)
+	// client.option.gospiderSpec.H2Spec
+	go func() {
+		defer client.Close()
+		defer server.Close()
+		for {
+			_, data, err := http2Server.ReadFrame()
+			if err != nil {
+				return
+			}
+			_, err = client.Write(data)
+			if err != nil {
+				return
+			}
+		}
+	}()
+	for {
+		_, data, err := http2Client.ReadFrame()
+		if err != nil {
+			return err
+		}
+		_, err = server.Write(data)
+		if err != nil {
+			return err
+		}
+	}
+}
+
 //	func (obj *Client) http12Copy(ctx context.Context, client *ProxyConn, server *ProxyConn) (err error) {
 //		defer client.Close()
 //		defer server.Close()
@@ -216,18 +183,18 @@ func (obj *Client) copyHttpMain(ctx context.Context, client *ProxyConn, server *
 	// if !client.option.http2 && server.option.http2 { //http12 逻辑
 	// 	return obj.http12Copy(ctx, client, server)
 	// }
-	// if client.option.http2 && server.option.http2 { //http22 逻辑
-	// 	if obj.requestCallBack != nil ||
-	// 		client.option.hSpec.IsSet() { //需要拦截请求 或需要设置h2指纹，就走12
-	// 		return obj.http22Copy(ctx, client, server)
-	// 	}
-	// 	go func() {
-	// 		defer client.Close()
-	// 		defer server.Close()
-	// 		tools.CopyWitchContext(ctx, client, server)
-	// 	}()
-	// 	return tools.CopyWitchContext(ctx, server, client)
-	// }
+	if client.option.http2 && server.option.http2 { //http22 逻辑
+		if obj.requestCallBack != nil ||
+			(client.option.gospiderSpec != nil && client.option.gospiderSpec.H2Spec != nil) { //需要拦截请求 或需要设置h2指纹，就走12
+			return obj.http22Copy(ctx, client, server)
+		}
+		go func() {
+			defer client.Close()
+			defer server.Close()
+			tools.CopyWitchContext(ctx, client, server)
+		}()
+		return tools.CopyWitchContext(ctx, server, client)
+	}
 	if obj.wsCallBack == nil && obj.requestCallBack == nil { //没有回调直接返回
 		if client.req != nil {
 			if err = client.req.Write(server); err != nil {
@@ -275,7 +242,7 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 			} else {
 				nextProtos = []string{"h2", "http/1.1"}
 			}
-			tlsServer, _, negotiatedProtocol, err := obj.tlsServer(ctx, server, client.option.host, nextProtos, client.option)
+			tlsServer, negotiatedProtocol, err := obj.tlsServer(ctx, server, client.option.host, nextProtos, client.option)
 			if err != nil {
 				return err
 			}
@@ -286,7 +253,6 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 	}
 	var tlsClient *tls.Conn
 	var tlsServer net.Conn
-	var peerCertificates []*x509.Certificate
 	var negotiatedProtocol string
 	tlsConfig := obj.TlsConfig()
 	tlsConfig.GetConfigForClient = func(chi *tls.ClientHelloInfo) (*tls.Config, error) {
@@ -294,7 +260,7 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 		if serverName == "" {
 			serverName = gtls.GetServerName(client.option.host)
 		}
-		tlsServer, peerCertificates, negotiatedProtocol, err = obj.tlsServer(ctx, server, serverName, chi.SupportedProtos, client.option)
+		tlsServer, negotiatedProtocol, err = obj.tlsServer(ctx, server, serverName, chi.SupportedProtos, client.option)
 		if err != nil {
 			return nil, err
 		}
@@ -302,19 +268,7 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 			negotiatedProtocol = "http/1.1"
 		}
 		var cert tls.Certificate
-		if len(peerCertificates) > 0 {
-			preCert := peerCertificates[0]
-			if preCert.IPAddresses == nil {
-				if ip, ipType := gtls.ParseHost(serverName); ipType != 0 {
-					preCert.IPAddresses = []net.IP{ip}
-				} else if ip := obj.dialer.LookupIPAddrWithCache(serverName); ip != nil {
-					preCert.IPAddresses = []net.IP{ip}
-				}
-			}
-			cert, err = gtls.CreateCertWithAddr(preCert.IPAddresses...)
-		} else {
-			cert, err = gtls.CreateCertWithAddr(net.IPv4(127, 0, 0, 1))
-		}
+		cert, err = gtls.CreateCertWithName(serverName)
 		if err != nil {
 			return nil, err
 		}
@@ -335,22 +289,22 @@ func (obj *Client) copyHttpsMain(ctx context.Context, client *ProxyConn, server 
 	serverProxy := newProxyCon(tlsServer, bufio.NewReader(tlsServer), *server.option, false)
 	return obj.copyHttpMain(ctx, clientProxy, serverProxy)
 }
-func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, nextProtos []string, clientOption *ProxyOption) (net.Conn, []*x509.Certificate, string, error) {
+func (obj *Client) tlsServer(ctx context.Context, conn net.Conn, addr string, nextProtos []string, clientOption *ProxyOption) (net.Conn, string, error) {
 	if clientOption.gospiderSpec.TLSSpec != nil {
 		utlsConfig := obj.UtlsConfig()
 		utlsConfig.NextProtos = nextProtos
 		tlsConn, err := obj.specClient.Client(ctx, conn, clientOption.gospiderSpec.TLSSpec, utlsConfig, gtls.GetServerName(addr), !slices.Contains(nextProtos, "h2"))
 		if err != nil {
-			return tlsConn, nil, "", err
+			return tlsConn, "", err
 		}
-		return tlsConn, tlsConn.ConnectionState().PeerCertificates, tlsConn.ConnectionState().NegotiatedProtocol, nil
+		return tlsConn, tlsConn.ConnectionState().NegotiatedProtocol, nil
 	}
 	tlsConfig := obj.TlsConfig()
 	tlsConfig.NextProtos = nextProtos
 	tlsConfig.ServerName = gtls.GetServerName(addr)
 	tlsConn := tls.Client(conn, tlsConfig)
 	if err := tlsConn.HandshakeContext(ctx); err != nil {
-		return tlsConn, nil, "", err
+		return tlsConn, "", err
 	}
-	return tlsConn, tlsConn.ConnectionState().PeerCertificates, tlsConn.ConnectionState().NegotiatedProtocol, nil
+	return tlsConn, tlsConn.ConnectionState().NegotiatedProtocol, nil
 }
